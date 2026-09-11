@@ -41,6 +41,17 @@ telegramLinks.forEach((link) => {
   });
 });
 
+// Completion is emitted only after a real signup flow signals success.
+// Any onsite form, Telegram WebApp bridge, or future producer onboarding UI can dispatch:
+// document.dispatchEvent(new CustomEvent('ridne:producer_signup_complete', { detail: { source: 'telegram' } }));
+document.addEventListener('ridne:producer_signup_complete', (event) => {
+  const detail = event instanceof CustomEvent && event.detail && typeof event.detail === 'object' ? event.detail : {};
+  ridneTrack('producer_signup_complete', {
+    page_path: location.pathname,
+    ...detail
+  });
+});
+
 if (telegram.enabled && telegram.username) {
   const username = String(telegram.username).replace(/^@/, '');
   telegramLinks.forEach((link) => {
