@@ -45,7 +45,7 @@ if (telegram.enabled && telegram.username) {
   const username = String(telegram.username).replace(/^@/, '');
   telegramLinks.forEach((link) => {
     const producerContext = link.matches('[data-producer-cta]') || Boolean(link.closest('#producers')) || location.pathname.startsWith('/vyrobnykam');
-    const start = producerContext ? 'ridne_producer' : 'ridne_store';
+    const start = producerContext ? 'sell' : 'ridne_store';
     link.href = `https://t.me/${encodeURIComponent(username)}?start=${start}`;
     link.removeAttribute('aria-disabled');
     if (link.textContent?.includes('підключається')) link.textContent = 'Відкрити бота РІДНЕ';
