@@ -1,0 +1,80 @@
+name: IndexNow
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'journal/**'
+      - 'vyrobnykam/**'
+      - 'telegram/**'
+      - 'terms/**'
+      - 'sitemap.xml'
+      - 'robots.txt'
+      - 'assets/**'
+      - '.github/workflows/indexnow.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  submit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Build canonical URL list
+        id: urls
+        shell: bash
+        run: |
+          python - <<'PY'
+          import os, subprocess
+          base='https://ridne.store'
+          before='HEAD^'
+          try:
+              changed=subprocess.check_output(['git','diff','--name-only',before,'HEAD'],text=True).splitlines()
+          except Exception:
+              changed=[]
+          urls=set()
+          for p in changed:
+              if p == 'index.html':
+                  urls.add(base + '/')
+              elif p.endswith('/index.html'):
+                  urls.add(base + '/' + p[:-10])
+              elif p in {'sitemap.xml','robots.txt'}:
+                  urls.add(base + '/')
+              elif p.startswith('assets/'):
+                  continue
+          if not urls:
+              urls.add(base + '/')
+          with open('/tmp/indexnow_urls.txt','w') as f:
+              for u in sorted(urls):
+                  f.write(u+'\n')
+          print('Submitting:')
+          print(open('/tmp/indexnow_urls.txt').read())
+          PY
+      - name: Submit changed canonical URLs to IndexNow
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json, urllib.request
+          urls=[u.strip() for u in open('/tmp/indexnow_urls.txt') if u.strip()]
+          payload={
+            'host':'ridne.store',
+            'key':'0321eeaab15d70fd5ff2683299f41ecb',
+            'keyLocation':'https://ridne.store/0321eeaab15d70fd5ff2683299f41ecb.txt',
+            'urlList':urls,
+          }
+          req=urllib.request.Request('https://api.indexnow.org/indexnow',data=json.dumps(payload).encode(),headers={'Content-Type':'application/json'},method='POST')
+          try:
+              with urllib.request.urlopen(req, timeout=30) as r:
+                  print('IndexNow status', r.status)
+                  print(r.read().decode(errors='replace'))
+          except urllib.error.HTTPError as e:
+              print('IndexNow HTTP status', e.code)
+              print(e.read().decode(errors='replace'))
+              if e.code not in (200,202):
+                  raise
+          PY
