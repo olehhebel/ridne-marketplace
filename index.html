@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <title>РІДНЕ — локальні продукти від українських виробників</title>
-  <meta name="description" content="Купуйте овочі, фрукти, мед та інші локальні продукти напряму від українських виробників. Видиме походження, локальний пошук, самовивіз і доставка.">
+  <meta name="description" content="Купуйте овочі, фрукти, мед, рибу, м’ясо та інші локальні продукти напряму від українських виробників. Видиме походження, локальний пошук, самовивіз і доставка.">
   <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
   <meta name="theme-color" content="#F2F0E8">
   <meta name="application-name" content="РІДНЕ">
@@ -31,6 +31,7 @@
   <meta name="twitter:image" content="https://ridne-marketplace.vercel.app/api/og">
   <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"OnlineStore","@id":"https://ridne.store/#organization","name":"РІДНЕ","alternateName":"RIDNE","url":"https://ridne.store/","logo":"https://ridne.store/assets/ridne-logo.svg","description":"Український маркетплейс локальних продуктів від перевірених виробників."},{"@type":"WebSite","@id":"https://ridne.store/#website","url":"https://ridne.store/","name":"РІДНЕ","alternateName":"RIDNE","inLanguage":"uk-UA","publisher":{"@id":"https://ridne.store/#organization"}},{"@type":"WebPage","@id":"https://ridne.store/#webpage","url":"https://ridne.store/","name":"РІДНЕ — локальні продукти від українських виробників","isPartOf":{"@id":"https://ridne.store/#website"},"about":{"@id":"https://ridne.store/#organization"},"inLanguage":"uk-UA"}]}</script>
   <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/chatbot.css">
   <script defer src="/telegram-config.js"></script>
   <script defer src="/app.js"></script>
 </head>
@@ -61,7 +62,7 @@
           <h1>Їжа, у якої<br>є адреса.</h1>
           <p class="lead">Знаходьте продукти поруч, бачте хто їх виростив або зробив, і обирайте зрозумілий спосіб отримання.</p>
           <form class="market-search" id="market-search" role="search">
-            <label><span>Що шукаєте</span><input name="q" autocomplete="off" placeholder="Наприклад, мед або томати"></label>
+            <label><span>Що шукаєте</span><input name="q" autocomplete="off" placeholder="Наприклад, мед, рибу або м’ясо"></label>
             <label><span>Де</span><input name="location" autocomplete="address-level2" placeholder="Місто або область"></label>
             <button class="button button-accent" type="submit">Знайти</button>
           </form>
@@ -85,6 +86,8 @@
           <a class="category" href="#"><small>04</small><strong>Мед</strong><span>Походження пасіки та партії продукту</span></a>
           <a class="category" href="#"><small>05</small><strong>Горіхи</strong><span>Локальні горіхи та сухі продукти</span></a>
           <a class="category" href="#"><small>06</small><strong>Заготовки</strong><span>Лише категорії з підтвердженими правилами</span></a>
+          <a class="category" href="#"><small>07</small><strong>Риба та рибна продукція</strong><span>Від рибних господарств і локальних виробників — з підтвердженим походженням та умовами зберігання</span></a>
+          <a class="category" href="#"><small>08</small><strong>М’ясо та м’ясна продукція</strong><span>М’ясо, ковбаси й крафтові вироби — з потрібними документами та контролем зберігання</span></a>
         </div>
       </div>
     </section>
@@ -110,12 +113,12 @@
     <section class="section telegram-section" id="telegram">
       <div class="shell telegram-card">
         <div class="telegram-copy">
-          <div class="eyebrow">РІДНЕ · Telegram</div>
+          <div class="eyebrow">РІДНЕ · Telegram · вже працює</div>
           <h2>Продати локальний товар — прямо з Telegram.</h2>
           <p>Без окремого кабінету: бот веде виробника від перевірки профілю до подання товару на модерацію, а покупцю дає каталог і структуровану заявку на замовлення.</p>
           <div class="telegram-actions">
             <a class="button button-accent telegram-launch" href="/telegram/">Відкрити РІДНЕ в Telegram</a>
-            <span class="bot-status" id="bot-status" data-state="setup">Backend готовий · підключаємо BotFather</span>
+            <span class="bot-status" id="bot-status" data-state="setup">@ridne_store_bot · працює</span>
           </div>
         </div>
         <div class="bot-flow" aria-label="Як працює бот РІДНЕ">
@@ -141,6 +144,11 @@
       <div class="shell producer-cta"><div><div class="eyebrow">Для виробників</div><h2>Вирощуєте або робите локально?</h2></div><div><p>Onboarding простий, але не анонімний: профіль, локація, категорія продукції, спосіб отримання та потрібна перевірка.</p><a class="button button-light telegram-launch" href="/telegram/">Почати в Telegram</a></div></div>
     </section>
   </main>
+
+  <a class="chatbot-dock telegram-launch" href="/telegram/" aria-label="Відкрити чат-бот РІДНЕ в Telegram">
+    <span class="chatbot-dock__icon">↗</span>
+    <span class="chatbot-dock__copy"><strong>Чат-бот РІДНЕ</strong><span>Працює · відкрити Telegram</span></span>
+  </a>
 
   <footer><div class="shell footer-inner"><img src="/assets/ridne-logo.svg" width="86" height="86" alt="РІДНЕ"><span>Локальні продукти · реальні виробники · видиме походження</span><span><a href="/terms/">Правила платформи</a> · © 2026 · ridne.store</span></div></footer>
 </body>
