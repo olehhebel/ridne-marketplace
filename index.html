@@ -31,6 +31,7 @@
   <meta name="twitter:image" content="https://ridne-marketplace.vercel.app/api/og">
   <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"OnlineStore","@id":"https://ridne.store/#organization","name":"РІДНЕ","alternateName":"RIDNE","url":"https://ridne.store/","logo":"https://ridne.store/assets/ridne-logo.webp","description":"Український маркетплейс локальних продуктів від перевірених виробників."},{"@type":"WebSite","@id":"https://ridne.store/#website","url":"https://ridne.store/","name":"РІДНЕ","alternateName":"RIDNE","inLanguage":"uk-UA","publisher":{"@id":"https://ridne.store/#organization"}},{"@type":"WebPage","@id":"https://ridne.store/#webpage","url":"https://ridne.store/","name":"РІДНЕ — локальні продукти від українських виробників","isPartOf":{"@id":"https://ridne.store/#website"},"about":{"@id":"https://ridne.store/#organization"},"inLanguage":"uk-UA"}]}</script>
   <link rel="stylesheet" href="/styles.css">
+  <script defer src="/telegram-config.js"></script>
   <script defer src="/app.js"></script>
 </head>
 <body>
@@ -44,10 +45,11 @@
       <nav aria-label="Головна навігація">
         <a href="#catalog">Каталог</a>
         <a href="#trust">Як ми перевіряємо</a>
+        <a href="#telegram">Telegram</a>
         <a href="#journal">Журнал</a>
         <a href="#producers">Виробникам</a>
       </nav>
-      <a class="button button-dark" href="#producers">Стати виробником</a>
+      <a class="button button-dark telegram-launch" href="/telegram/">Продати в Telegram</a>
     </div>
   </header>
 
@@ -105,6 +107,25 @@
       </div>
     </section>
 
+    <section class="section telegram-section" id="telegram">
+      <div class="shell telegram-card">
+        <div class="telegram-copy">
+          <div class="eyebrow">РІДНЕ · Telegram</div>
+          <h2>Продати локальний товар — прямо з Telegram.</h2>
+          <p>Без окремого кабінету: бот веде виробника від перевірки профілю до подання товару на модерацію, а покупцю дає каталог і структуровану заявку на замовлення.</p>
+          <div class="telegram-actions">
+            <a class="button button-accent telegram-launch" href="/telegram/">Відкрити РІДНЕ в Telegram</a>
+            <span class="bot-status" id="bot-status" data-state="setup">Backend готовий · підключаємо BotFather</span>
+          </div>
+        </div>
+        <div class="bot-flow" aria-label="Як працює бот РІДНЕ">
+          <article><small>01</small><div><strong>Перевірка виробника</strong><span>Профіль, локація, контакти та реєстрація потужності.</span></div></article>
+          <article><small>02</small><div><strong>Товар за кілька кроків</strong><span>Категорія, фото, ціна, кількість, походження та зберігання.</span></div></article>
+          <article><small>03</small><div><strong>Модерація → каталог</strong><span>Тільки після перевірки товар стає видимим покупцям.</span></div></article>
+        </div>
+      </div>
+    </section>
+
     <section class="section journal" id="journal">
       <div class="shell">
         <div class="section-head"><div><div class="eyebrow">Журнал РІДНЕ</div><h2>Корисно про локальні продукти.</h2></div><p>Матеріали про сезонність, походження, виробників, зберігання та вибір продуктів.</p></div>
@@ -117,10 +138,10 @@
     </section>
 
     <section class="section" id="producers">
-      <div class="shell producer-cta"><div><div class="eyebrow">Для виробників</div><h2>Вирощуєте або робите локально?</h2></div><div><p>Onboarding буде простим, але не анонімним: профіль, локація, категорія продукції, спосіб отримання та потрібна перевірка.</p><span class="button button-light" aria-disabled="true">Onboarding готується</span></div></div>
+      <div class="shell producer-cta"><div><div class="eyebrow">Для виробників</div><h2>Вирощуєте або робите локально?</h2></div><div><p>Onboarding простий, але не анонімний: профіль, локація, категорія продукції, спосіб отримання та потрібна перевірка.</p><a class="button button-light telegram-launch" href="/telegram/">Почати в Telegram</a></div></div>
     </section>
   </main>
 
-  <footer><div class="shell footer-inner"><img src="/assets/ridne-logo.webp" width="86" height="86" alt="РІДНЕ"><span>Локальні продукти · реальні виробники · видиме походження</span><span>© 2026 · ridne.store</span></div></footer>
+  <footer><div class="shell footer-inner"><img src="/assets/ridne-logo.webp" width="86" height="86" alt="РІДНЕ"><span>Локальні продукти · реальні виробники · видиме походження</span><span><a href="/terms/">Правила платформи</a> · © 2026 · ridne.store</span></div></footer>
 </body>
 </html>
