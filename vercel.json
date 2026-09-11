@@ -5,6 +5,11 @@
   "alias": ["ridne.store", "www.ridne.store"],
   "redirects": [
     {
+      "source": "/assets/ridne-logo.svg",
+      "destination": "/assets/ridne-logo.webp",
+      "permanent": false
+    },
+    {
       "source": "/(.*)",
       "has": [{"type": "host", "value": "www.ridne.store"}],
       "destination": "https://ridne.store/$1",
