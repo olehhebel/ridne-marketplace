@@ -1,3 +1,10 @@
+document.querySelectorAll('img[src$="/assets/ridne-logo.svg"], img[src$="ridne-logo.svg"]').forEach((img) => {
+  img.src = '/assets/ridne-logo.webp';
+});
+document.querySelectorAll('link[rel="icon"], link[rel="apple-touch-icon"]').forEach((link) => {
+  if (link.getAttribute('href')?.includes('ridne-logo.svg')) link.href = '/assets/ridne-logo.webp';
+});
+
 window.dataLayer = window.dataLayer || [];
 
 function ridneTrack(eventName, params = {}) {
