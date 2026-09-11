@@ -1,5 +1,5 @@
 window.RIDNE_TELEGRAM = {
-  enabled: false,
-  username: "",
+  enabled: true,
+  username: "ridne_store_bot",
   miniAppUrl: "/telegram/"
 };
