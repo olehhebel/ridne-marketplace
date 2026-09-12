@@ -47,3 +47,64 @@ window.RIDNE_TELEGRAM = {
     mount();
   }
 })();
+
+(function restoreAnalyticsHooks() {
+  function emit(event, details) {
+    const payload = Object.assign({ event }, details || {});
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push(payload);
+    if (typeof window.gtag === "function") window.gtag("event", event, details || {});
+    if (typeof window.clarity === "function") window.clarity("event", event);
+  }
+
+  function oncePerPage(key, event, details) {
+    const marker = `ridne-analytics:${key}`;
+    try {
+      if (sessionStorage.getItem(marker)) return;
+      sessionStorage.setItem(marker, "1");
+    } catch (_) {}
+    emit(event, details);
+  }
+
+  document.addEventListener("click", function (event) {
+    const link = event.target.closest("a[href]");
+    if (!link) return;
+    const href = link.getAttribute("href") || "";
+    if (href.startsWith("/signup/") && (href.includes("role=seller") || location.pathname === "/vyrobnykam/")) {
+      emit("producer_cta_click", { link_url: link.href, link_text: (link.textContent || "").trim() });
+    }
+    if (href.startsWith("/journal/")) {
+      emit("journal_open", { article_url: link.href, article_title: (link.textContent || "").trim() });
+    }
+  });
+
+  document.addEventListener("submit", function (event) {
+    if (event.target && event.target.matches(".header-search")) {
+      const query = event.target.querySelector('[name="q"]')?.value?.trim() || "";
+      emit("search_submit", { search_term: query });
+    }
+  });
+
+  if (location.pathname === "/signup/") {
+    const role = new URLSearchParams(location.search).get("role");
+    if (role === "seller") {
+      oncePerPage("producer-signup-start", "producer_signup_start", { signup_method: "web" });
+    }
+  }
+
+  function complete(details) {
+    oncePerPage("producer-signup-complete", "producer_signup_complete", Object.assign({ signup_method: "web" }, details || {}));
+  }
+
+  window.addEventListener("ridne:producer-signup-complete", function (event) {
+    complete(event.detail || {});
+  });
+
+  window.addEventListener("message", function (event) {
+    if (event.origin && event.origin !== location.origin) return;
+    const data = event.data;
+    if (data && typeof data === "object" && (data.type === "producer_signup_complete" || data.event === "producer_signup_complete")) {
+      complete(data.details || {});
+    }
+  });
+})();
