@@ -11,7 +11,7 @@
     },
     {
       "source": "/(.*)",
-      "has": [{"type": "host", "value": "www.ridne.store"}],
+      "has": [{"type": "host", "value": ".*\\.vercel\\.app"}],
       "destination": "https://ridne.store/$1",
       "permanent": true
     }
@@ -25,6 +25,14 @@
     {
       "source": "/assets/(.*)",
       "headers": [{"key": "Cache-Control", "value": "public, max-age=31536000, immutable"}]
+    },
+    {
+      "source": "/i18n.js",
+      "headers": [{"key": "Cache-Control", "value": "public, max-age=0, must-revalidate"}]
+    },
+    {
+      "source": "/telegram-config.js",
+      "headers": [{"key": "Cache-Control", "value": "public, max-age=0, must-revalidate"}]
     },
     {
       "source": "/(.*)",
