@@ -23,3 +23,12 @@
 - Seller verification and product moderation remain required.
 - `free_launch`, `paid`, and `legacy` listing states may be eligible for publication, provided the seller is verified, the category is allowed, and the product is approved.
 - Free launch applications must never bypass moderation.
+
+## 2026-09-12 — Web marketplace rebuild
+
+- Replace explanatory homepage with discovery, category controls, national location filter, promotional placements and real inventory lookup.
+- Five-step onboarding: buyer/seller → up to five categories → oblast/locality → personal/producer details → confirmed email.
+- Producer types: craft workshop, farm, family production. Business status is self-declared and never grants verification.
+- Email destination confirmed through connected Gmail profile: doctorgebel@gmail.com. Never include passwords or login links in admin notices.
+- Demonstration product cards and all 20 animated sample reviews MUST remain visibly labelled as fictional examples and excluded from ratings, Product review schema and checkout.
+- Supabase Auth production SMTP/redirect configuration and Resend sender secrets still require activation and delivery verification; see backend/web/README.md.

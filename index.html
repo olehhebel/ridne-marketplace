@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <title>РІДНЕ — локальні продукти від українських виробників</title>
+  <title>РІДНЕ — маркетплейс продуктів і крафту з усієї України</title>
   <meta name="description" content="Купуйте овочі, фрукти, мед, рибу, м’ясо та інші локальні продукти напряму від українських виробників. Видиме походження, локальний пошук, самовивіз і доставка.">
   <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
   <meta name="theme-color" content="#F2F0E8">
@@ -34,126 +34,8 @@
   <meta name="twitter:image" content="https://ridne.store/assets/ridne-logo.png">
   <meta name="twitter:image:alt" content="Логотип РІДНЕ — український маркетплейс локальних продуктів">
   <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"OnlineStore","@id":"https://ridne.store/#organization","name":"РІДНЕ","alternateName":"RIDNE","url":"https://ridne.store/","logo":{"@type":"ImageObject","url":"https://ridne.store/assets/ridne-logo.png","contentUrl":"https://ridne.store/assets/ridne-logo.png","width":768,"height":768},"description":"Український маркетплейс локальних продуктів від перевірених виробників."},{"@type":"WebSite","@id":"https://ridne.store/#website","url":"https://ridne.store/","name":"РІДНЕ","alternateName":"RIDNE","inLanguage":"uk-UA","publisher":{"@id":"https://ridne.store/#organization"}},{"@type":"WebPage","@id":"https://ridne.store/#webpage","url":"https://ridne.store/","name":"РІДНЕ — локальні продукти від українських виробників","isPartOf":{"@id":"https://ridne.store/#website"},"about":{"@id":"https://ridne.store/#organization"},"primaryImageOfPage":{"@type":"ImageObject","url":"https://ridne.store/assets/ridne-logo.png","width":768,"height":768},"inLanguage":"uk-UA"}]}</script>
-  <link rel="stylesheet" href="/styles.css">
-  <link rel="stylesheet" href="/chatbot.css">
+  <link rel="stylesheet" href="/marketplace/market.css">
+  <script defer src="/vendor/supabase.js"></script><script defer src="/marketplace/config.js"></script><script defer src="/marketplace/market.js"></script>
   <script defer src="/telegram-config.js"></script>
-  <script defer src="/app.js"></script>
-</head>
-<body>
-  <a class="skip" href="#main">До основного вмісту</a>
-  <header class="site-header">
-    <div class="shell header-inner">
-      <a class="brand" href="/" aria-label="РІДНЕ — головна">
-        <img src="/assets/ridne-logo.webp" width="58" height="58" alt="" fetchpriority="high" loading="eager" decoding="async">
-        <strong>РІДНЕ</strong>
-      </a>
-      <nav aria-label="Головна навігація">
-        <a href="#catalog">Каталог</a>
-        <a href="#trust">Як ми перевіряємо</a>
-        <a href="#telegram">Telegram</a>
-        <a href="#journal">Журнал</a>
-        <a href="#producers">Виробникам</a>
-      </nav>
-      <a class="button button-dark telegram-launch" href="/telegram/">Продати в Telegram</a>
-    </div>
-  </header>
-
-  <main id="main">
-    <section class="hero">
-      <div class="shell hero-grid">
-        <div class="hero-copy">
-          <div class="eyebrow">Локальна їжа · видиме походження</div>
-          <h1>Їжа, у якої<br>є адреса.</h1>
-          <p class="lead">Знаходьте продукти поруч, бачте хто їх виростив або зробив, і обирайте зрозумілий спосіб отримання.</p>
-          <form class="market-search" id="market-search" role="search">
-            <label><span>Що шукаєте</span><input name="q" autocomplete="off" placeholder="Наприклад, мед, рибу або м’ясо"></label>
-            <label><span>Де</span><input name="location" autocomplete="address-level2" placeholder="Місто або область"></label>
-            <button class="button button-accent" type="submit">Знайти</button>
-          </form>
-          <div class="trust-points"><span>Реальні профілі виробників</span><span>Локальний пошук</span><span>Паспорт продукту</span></div>
-        </div>
-        <div class="hero-visual" aria-label="РІДНЕ — маркетплейс локальних продуктів">
-          <div class="logo-stage"><img src="/assets/ridne-logo.webp" width="768" height="768" alt="Логотип РІДНЕ — український маркетплейс локальних продуктів" fetchpriority="high" loading="eager" decoding="async"></div>
-          <div class="float-card float-one"><span>ПОХОДЖЕННЯ</span><b>Видно звідки</b></div>
-          <div class="float-card float-two"><span>ОТРИМАННЯ</span><b>Самовивіз / доставка</b></div>
-        </div>
-      </div>
-    </section>
-
-    <section class="section" id="catalog">
-      <div class="shell">
-        <div class="section-head"><div><div class="eyebrow">Категорії MVP</div><h2>Починаємо з простого<br>та зрозумілого.</h2></div><p>Категорії, для яких можна чесно налаштувати перевірку виробника, походження товару та виконання замовлення.</p></div>
-        <div class="category-grid" aria-label="Категорії">
-          <article class="category"><small>01</small><strong>Овочі</strong><span>Томати, огірки, зелень та сезонні овочі</span></article>
-          <article class="category"><small>02</small><strong>Фрукти</strong><span>Яблука, груші, сливи та локальні сорти</span></article>
-          <article class="category"><small>03</small><strong>Ягоди</strong><span>Свіжі та сезонні ягоди від виробників</span></article>
-          <article class="category"><small>04</small><strong>Мед</strong><span>Походження пасіки та партії продукту</span></article>
-          <article class="category"><small>05</small><strong>Горіхи</strong><span>Локальні горіхи та сухі продукти</span></article>
-          <article class="category"><small>06</small><strong>Заготовки</strong><span>Лише категорії з підтвердженими правилами</span></article>
-          <article class="category"><small>07</small><strong>Риба та рибна продукція</strong><span>Від рибних господарств і локальних виробників — з підтвердженим походженням та умовами зберігання</span></article>
-          <article class="category"><small>08</small><strong>М’ясо та м’ясна продукція</strong><span>М’ясо, ковбаси й крафтові вироби — з потрібними документами та контролем зберігання</span></article>
-        </div>
-      </div>
-    </section>
-
-    <section class="section trust-section" id="trust">
-      <div class="shell trust-grid">
-        <div><div class="eyebrow">Довіра — продуктова функція</div><h2>Не просто<br>«домашнє».</h2><p>РІДНЕ будується як перевірений маркетплейс. Профіль виробника, походження та потрібні для категорії дані — частина покупки, а не випадковий текст в оголошенні.</p></div>
-        <div class="trust-list">
-          <article><small>01</small><div><h3>Виробник</h3><p>Кожен товар прив’язаний до реального профілю продавця.</p></div></article>
-          <article><small>02</small><div><h3>Походження</h3><p>Видно населений пункт, регіон і джерело продукту.</p></div></article>
-          <article><small>03</small><div><h3>Паспорт продукту</h3><p>Структуровані дані про склад, дату, зберігання та партію — де це потрібно.</p></div></article>
-        </div>
-      </div>
-    </section>
-
-    <section class="section local-section">
-      <div class="shell local-grid">
-        <div class="location-card" aria-label="Приклад локального пошуку"><span class="map-line l1"></span><span class="map-line l2"></span><span class="place p1">Київщина</span><span class="place p2">поруч</span><span class="place p3">самовивіз</span></div>
-        <div><div class="eyebrow">Що · хто · де · коли</div><h2>Пошук починається не з полиці, а з місця.</h2><p>Локація — першокласний фільтр: населений пункт, область, відстань, самовивіз, доставка виробника та доступність.</p></div>
-      </div>
-    </section>
-
-    <section class="section telegram-section" id="telegram">
-      <div class="shell telegram-card">
-        <div class="telegram-copy">
-          <div class="eyebrow">РІДНЕ · Telegram · вже працює</div>
-          <h2>Продати локальний товар — прямо з Telegram.</h2>
-          <p>Без окремого кабінету: бот веде виробника від перевірки профілю до подання товару на модерацію, а покупцю дає каталог і структуровану заявку на замовлення.</p>
-          <div class="telegram-actions">
-            <a class="button button-accent telegram-launch" href="/telegram/">Відкрити РІДНЕ в Telegram</a>
-            <span class="bot-status" id="bot-status" data-state="setup">@ridne_store_bot · працює</span>
-          </div>
-        </div>
-        <div class="bot-flow" aria-label="Як працює бот РІДНЕ">
-          <article><small>01</small><div><strong>Перевірка виробника</strong><span>Профіль, локація, контакти та реєстрація потужності.</span></div></article>
-          <article><small>02</small><div><strong>Товар за кілька кроків</strong><span>Категорія, фото, ціна, кількість, походження та зберігання.</span></div></article>
-          <article><small>03</small><div><strong>Модерація → каталог</strong><span>Тільки після перевірки товар стає видимим покупцям.</span></div></article>
-        </div>
-      </div>
-    </section>
-
-    <section class="section journal" id="journal">
-      <div class="shell">
-        <div class="section-head"><div><div class="eyebrow">Журнал РІДНЕ</div><h2>Корисно про локальні продукти.</h2></div><p>Матеріали про сезонність, походження, виробників, зберігання та вибір продуктів.</p></div>
-        <div class="posts">
-          <a class="post" href="/journal/yak-obyraty-lokalnyi-med/"><div class="post-mark">РІДНЕ · ГІД</div><div><h3>Як обирати локальний мед і читати походження</h3><p>Хто виробник, де зібрано мед, яка партія та як зберігається продукт.</p></div></a>
-          <a class="post" href="/journal/shcho-kupuvaty-u-veresni/"><div class="post-mark">РІДНЕ · СЕЗОН</div><div><h3>Що купувати у вересні в українських виробників</h3><p>Овочі, фрукти, ягоди, горіхи та сезонні заготовки.</p></div></a>
-          <a class="post" href="/journal/profil-vyrobnyka-yakomu-doviryayut/"><div class="post-mark">РІДНЕ · ВИРОБНИК</div><div><h3>Що має бути у профілі виробника, якому довіряють</h3><p>Локація, товари, умови отримання, історія та перевірені дані.</p></div></a>
-        </div>
-      </div>
-    </section>
-
-    <section class="section" id="producers">
-      <div class="shell producer-cta"><div><div class="eyebrow">Для виробників</div><h2>Вирощуєте або робите локально?</h2></div><div><p>Onboarding простий, але не анонімний: профіль, локація, категорія продукції, спосіб отримання та потрібна перевірка.</p><a class="button button-light telegram-launch" href="/telegram/">Почати в Telegram</a></div></div>
-    </section>
-  </main>
-
-  <a class="chatbot-dock telegram-launch" href="/telegram/" aria-label="Відкрити чат-бот РІДНЕ в Telegram">
-    <span class="chatbot-dock__icon">↗</span>
-    <span class="chatbot-dock__copy"><strong>Чат-бот РІДНЕ</strong><span>Працює · відкрити Telegram</span></span>
-  </a>
-
-  <footer><div class="shell footer-inner"><img src="/assets/ridne-logo.webp" width="86" height="86" alt="РІДНЕ" loading="lazy" decoding="async"><span>Локальні продукти · реальні виробники · видиме походження</span><span><a href="/terms/">Правила платформи</a> · © 2026 · ridne.store</span></div></footer>
-</body>
-</html>
+  
+</head><body><a class="skip" href="#main">До основного вмісту</a><div class="topline">Вирощено й зроблено в Україні. Знайдіть своє рідне.</div><header class="header"><div class="wrap header-row"><a class="brand" href="/" aria-label="Рідне — головна"><img src="/assets/ridne-logo.webp" width="52" height="52" alt="">РІДНЕ</a><form class="header-search" action="/" role="search"><label for="search" class="sr-only">Пошук товарів і виробників</label><input id="search" name="q" placeholder="Мед, яблука, щось до столу…" autocomplete="off"><button class="btn primary" aria-label="Знайти товари">Знайти</button></form><a class="btn header-account" href="/account/">Мій кабінет</a><a class="btn primary header-sell" href="/signup/?role=seller">Продавати на Рідне</a></div><div class="wrap subnav"><nav class="subnav-links" aria-label="Головна навігація"><a href="/#catalog">Каталог</a><a href="/vyrobnykam/">Виробникам</a><a href="/#journal">Журнал</a><a href="https://t.me/ridne_store_bot?start=ridne_store">Чат-бот</a></nav><label><span class="sr-only">Область для пошуку</span><select class="location" id="global-region"><option value="">Вся Україна</option></select></label></div></header><main id="main" class="wrap"><div class="intro"><div><div class="eyebrow">Від українських виробників</div><h1>Ваш щоденний ринок.<br>Тепер ближче.</h1><p>Обирайте за смаком, походженням і місцем.</p></div><p class="intro-note">Вся Україна.<br>Від маленької пасіки до родинної ферми.</p></div><div id="categories" class="category-strip" aria-label="Категорії товарів"></div><div class="promos"><section class="promo main"><div class="promo-copy"><div class="eyebrow">Сезонне — найсмачніше</div><h2>Осінь має<br>смак рідного.</h2><p>Яблука, горіхи, мед і все, що вирощено з турботою.</p><a class="btn primary" href="#catalog">Перейти до каталогу</a></div><img src="/assets/seasonal-harvest.webp" width="1200" height="800" alt="Сезонний натюрморт: томати, яблука, мед і горіхи. Ілюстративне зображення." fetchpriority="high"></section><section class="promo side"><div class="eyebrow">Для тих, хто створює своє</div><h2>Ваші продукти.<br>Ваш власний магазин.</h2><p>Крафтова майстерня чи господарство — почніть із простого профілю.</p><a class="btn lime" href="/signup/?role=seller">Створити профіль</a></section></div><section id="catalog" class="section"><div class="section-head"><div><h2>Знайдіть своє до столу</h2><p>Продукти й крафт з усієї України</p></div><a href="/?favorites=1#catalog" class="btn">♡ Обране</a></div><div class="filters"><label class="field"><span>Категорія</span><select id="filter-category"><option value="">Усі категорії</option></select></label><label class="field"><span>Населений пункт</span><input id="filter-locality" placeholder="Будь-яке місто чи село"></label><label class="field"><span>Сортування</span><select id="sort"><option value="new">Спочатку нові</option><option value="low">Від дешевих до дорогих</option><option value="high">Від дорогих до дешевих</option></select></label><button class="btn" id="clear-filters">Скинути</button></div><div id="catalog-status" class="catalog-status" role="status">Завантажуємо товари…</div><div id="products" class="products"></div><details id="demo-catalog" class="section"><summary class="btn">Подивитися приклади карток товарів</summary><p class="catalog-status">Демонстраційна вітрина: назви, ціни та зображення наведено для прикладу. Це не пропозиції продавців, замовити їх неможливо.</p><div id="demo-products" class="products"></div></details></section></main><section class="review-section" aria-labelledby="reviews-title"><div class="wrap"><div class="section-head"><div><div class="eyebrow">Як виглядатимуть відгуки</div><h2 id="reviews-title">Враження у кількох словах</h2></div><button id="pause-reviews" class="btn" aria-pressed="false">Зупинити стрічку</button></div><p class="review-disclaimer">Демонстраційні відгуки: усі 20 імен, тексти та оцінки вигадані для показу дизайну. Це не досвід реальних покупців і не рейтинг Рідне.</p></div><div class="review-window"><div class="review-track" id="reviews"></div></div></section><div class="wrap"><section class="section" id="journal"><div class="section-head"><h2>Корисне від Рідне</h2></div><div class="article-grid"><a class="article-link" href="/journal/yak-obyraty-lokalnyi-med/"><span class="eyebrow">Обираємо уважно</span><h3>Як обирати локальний мед</h3><p>Походження, виробник і зберігання.</p></a><a class="article-link" href="/journal/shcho-kupuvaty-u-veresni/"><span class="eyebrow">Сезонний гід</span><h3>Що купувати у вересні</h3><p>Смак сезону у вашому кошику.</p></a><a class="article-link" href="/journal/profil-vyrobnyka-yakomu-doviryayut/"><span class="eyebrow">Для виробника</span><h3>Профіль, якому довіряють</h3><p>Розкажіть покупцям про те, що робите.</p></a></div></section><section class="bottom-cta section"><div><h2>Своє знайдеться для кожного.</h2><p>Збережіть улюблене та створіть особистий профіль за п’ять кроків.</p></div><a class="btn primary" href="/signup/">Приєднатися до Рідне</a></section></div><dialog class="modal" id="product-modal"><div class="section-head"><h2>Про товар</h2><button class="btn" id="close-product" aria-label="Закрити картку товару">✕</button></div><div id="product-detail"></div></dialog><footer class="footer"><div class="wrap footer-row"><a class="brand" href="/">РІДНЕ</a><div class="footer-links"><a href="/terms/">Правила платформи</a><a href="/privacy/">Приватність</a><a href="https://t.me/ridne_store_bot?start=ridne_store">Telegram</a></div><p>© 2026 Рідне · Вся Україна</p></div></footer><nav class="mobile-nav" aria-label="Мобільна навігація"><a href="/"><span aria-hidden="true">⌂</span>Головна</a><a href="/#catalog"><span aria-hidden="true">▦</span>Каталог</a><a href="/?favorites=1#catalog"><span aria-hidden="true">♡</span>Обране</a><a href="/account/"><span aria-hidden="true">◯</span>Кабінет</a></nav><div id="toast" class="toast" role="status" hidden></div><noscript><p class="nojs">Для пошуку й кабінету увімкніть JavaScript. Також можна скористатися <a href="https://t.me/ridne_store_bot">Telegram-ботом Рідне</a>.</p></noscript></body></html>
