@@ -7,6 +7,6 @@
   "background_color":"#000000",
   "theme_color":"#000000",
   "icons":[
-    {"src":"/assets/ridne-logo.webp","sizes":"256x256","type":"image/webp","purpose":"any"}
+    {"src":"/assets/ridne-logo.webp?v=20260912-2","sizes":"256x256","type":"image/webp","purpose":"any"}
   ]
 }
