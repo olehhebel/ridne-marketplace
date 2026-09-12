@@ -1,3 +1,11 @@
+(function loadRidneI18n() {
+  if (document.querySelector('script[data-ridne-i18n]')) return;
+  const script = document.createElement('script');
+  script.src = '/i18n.js?v=20260912-1';
+  script.dataset.ridneI18n = '1';
+  document.head.appendChild(script);
+})();
+
 window.RIDNE_TELEGRAM = {
   enabled: true,
   username: "ridne_store_bot",
