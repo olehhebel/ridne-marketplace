@@ -122,7 +122,83 @@ async function notifyAdmin(text: string, replyMarkup?: unknown) {
   const c = await cfg();
   const destination = c.moderation_chat_id || c.admin_telegram_id;
   if (!destination) return;
-  await send(destination, text, replyMarkup ? { reply_markup: replyMarkup } : {});
+  return send(destination, text, replyMarkup ? { reply_markup: replyMarkup } : {});
+}
+
+async function sendPendingModeration(targetType: "seller" | "product", targetId: string) {
+  const c = await cfg();
+  const destination = c.moderation_chat_id || c.admin_telegram_id;
+  if (!destination) return { status: "no_destination", target_type: targetType, target_id: targetId };
+
+  const { data: claimed, error: claimError } = await db.rpc("claim_moderation_notification", {
+    p_target_type: targetType,
+    p_target_id: targetId
+  });
+  if (claimError) throw claimError;
+  const notice = Array.isArray(claimed) ? claimed[0] : claimed;
+  if (!notice?.id) return { status: "skipped", target_type: targetType, target_id: targetId };
+
+  try {
+    let text = "";
+    let replyMarkup: unknown;
+    if (targetType === "seller") {
+      const { data: seller, error } = await db.from("seller_profiles")
+        .select("id,display_name,producer_type,email,oblast,locality")
+        .eq("id", targetId).single();
+      if (error) throw error;
+      text = `<b>Виробник на перевірку</b>\n${esc(seller.display_name)}\n${esc(seller.producer_type || "Тип не вказано")}\n${esc([seller.locality, seller.oblast].filter(Boolean).join(", ") || "Локація не вказана")}\n${seller.email ? `Email: ${esc(seller.email)}` : "Заявка з Telegram"}`;
+      replyMarkup = { inline_keyboard: [[
+        { text: "✅ Схвалити", callback_data: `as:approve:${seller.id}` },
+        { text: "↩️ Уточнення", callback_data: `as:changes:${seller.id}` }
+      ]] };
+    } else {
+      const { data: product, error } = await db.from("products")
+        .select("id,title,price_uah,unit,origin_oblast,origin_locality,seller_profiles(display_name,verification_status)")
+        .eq("id", targetId).single();
+      if (error) throw error;
+      const seller = Array.isArray(product.seller_profiles) ? product.seller_profiles[0] : product.seller_profiles;
+      text = `<b>Товар на модерацію</b>\n${esc(product.title)}\n${Number(product.price_uah).toFixed(0)} грн / ${esc(product.unit)}\n${esc([product.origin_locality, product.origin_oblast].filter(Boolean).join(", ") || "Походження не вказане")}\nВиробник: ${esc(seller?.display_name || "Не вказаний")}\nСтатус виробника: ${esc(seller?.verification_status || "невідомий")}`;
+      replyMarkup = { inline_keyboard: [[
+        { text: "✅ Опублікувати", callback_data: `ap:approve:${product.id}` },
+        { text: "↩️ Уточнення", callback_data: `ap:changes:${product.id}` }
+      ]] };
+    }
+
+    const sent = await send(destination, text, { reply_markup: replyMarkup });
+    await db.from("moderation_notifications").update({
+      status: "sent",
+      telegram_chat_id: destination,
+      telegram_message_id: sent.message_id,
+      sent_at: new Date().toISOString(),
+      last_error: null
+    }).eq("id", notice.id);
+    return { status: "sent", target_type: targetType, target_id: targetId };
+  } catch (error) {
+    await db.from("moderation_notifications").update({
+      status: "failed",
+      last_error: String(error).slice(0, 1000)
+    }).eq("id", notice.id);
+    return { status: "failed", target_type: targetType, target_id: targetId, error: String(error) };
+  }
+}
+
+async function syncPendingModeration() {
+  const [{ data: sellers, error: sellerError }, { data: products, error: productError }] = await Promise.all([
+    db.from("seller_profiles").select("id").eq("verification_status", "pending").order("submitted_at", { ascending: true }),
+    db.from("products").select("id").eq("status", "pending").order("submitted_at", { ascending: true })
+  ]);
+  if (sellerError) throw sellerError;
+  if (productError) throw productError;
+  const results = [];
+  for (const seller of sellers || []) results.push(await sendPendingModeration("seller", seller.id));
+  for (const product of products || []) results.push(await sendPendingModeration("product", product.id));
+  return {
+    ok: results.every((item) => item.status !== "failed" && item.status !== "no_destination"),
+    sent: results.filter((item) => item.status === "sent").length,
+    skipped: results.filter((item) => item.status === "skipped").length,
+    failed: results.filter((item) => item.status === "failed").length,
+    results
+  };
 }
 
 async function connectModerationChannel(chatId: number, token: string) {
@@ -615,9 +691,19 @@ Deno.serve(async (req: Request) => {
         return json(result);
       } catch (e) { return json({ ok: false, error: String(e) }, 500); }
     }
+    if (url.searchParams.get("sync_moderation") === "1") {
+      const oneTimeToken = url.searchParams.get("token") || "";
+      const { data: claim } = await db.from("marketplace_settings").select("value").eq("key", "telegram_moderation_sync_claim").maybeSingle();
+      if (!oneTimeToken || String(claim?.value) !== oneTimeToken) return json({ error: "unauthorized" }, 401);
+      try {
+        const result = await syncPendingModeration();
+        await db.from("marketplace_settings").delete().eq("key", "telegram_moderation_sync_claim");
+        return json(result, result.ok ? 200 : 500);
+      } catch (e) { return json({ ok: false, error: String(e) }, 500); }
+    }
     const c = await cfg();
     const quota = await launchQuota();
-    return json({ ok: true, service: "ridne-telegram", release: "moderation-admin-v7", bot_configured: Boolean(BOT_TOKEN), bot_username: c.bot_username, admin_configured: Boolean(c.admin_telegram_id), moderation_channel_configured: Boolean(c.moderation_chat_id), monetization_mode: "launch_free", free_listings_used: quota.used, free_listings_limit: quota.limit, payments_enabled: false });
+    return json({ ok: true, service: "ridne-telegram", release: "moderation-admin-v8", bot_configured: Boolean(BOT_TOKEN), bot_username: c.bot_username, admin_configured: Boolean(c.admin_telegram_id), moderation_channel_configured: Boolean(c.moderation_chat_id), monetization_mode: "launch_free", free_listings_used: quota.used, free_listings_limit: quota.limit, payments_enabled: false });
   }
   if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
   const c = await cfg();
