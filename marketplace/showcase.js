@@ -78,16 +78,46 @@
     { cat: 'eggs', title: 'Яйця перепелині', price: 80, unit: '20 шт', source: 'Minfin · близько 79,78 ₴/20 шт', regulated: true }
   ];
 
+  // The showcase is intentionally driven by the single audited 5×5 sprite.
+  // Each card declares its exact cell so a category can never reuse a misleading photo.
+  const EXACT_ITEMS = [
+    ['vegetables','Томати рожеві',95,'кг','Стиглі червоні томати',0,'Маєте томати? Це ваш слот'],
+    ['vegetables','Огірки ґрунтові',70,'кг','Свіжі зелені огірки',1,'Ваші огірки можуть бути тут'],
+    ['vegetables','Картопля молода',38,'кг','Молода фермерська картопля',2,'Покажіть свій урожай'],
+    ['vegetables','Морква з бадиллям',55,'кг','Свіжа морква з зеленим бадиллям',3,'Цей слот ще пустий'],
+    ['vegetables','Перець солодкий',120,'кг','Червоний солодкий перець',4,'Тут може бути ваша реклама'],
+    ['fruits','Яблука домашні',48,'кг','Домашні червоно-зелені яблука',5,'Додайте свої яблука'],
+    ['fruits','Груші медові',85,'кг','Стиглі медові груші',6,'Займіть цю картку'],
+    ['fruits','Виноград темний',110,'кг','Грона темного винограду',7,'Нехай побачать ваше'],
+    ['berries','Малина свіжа',150,'лоток','Свіжа червона малина',8,'Ваші ягоди чекають'],
+    ['berries','Лохина добірна',175,'лоток','Добірна свіжа лохина',9,'Перший слот для ягід'],
+    ['herbs','Петрушка духмяна',35,'пучок','Пучок свіжої петрушки',10,'Ваша зелень — сюди'],
+    ['herbs','Базилік зелений',42,'пучок','Свіже зелене листя базиліку',11,'Вирощуєте базилік? Додавайте'],
+    ['herbs','Кріп молодий',30,'пучок','Пучок молодого кропу',12,'Розкажіть про свій продукт'],
+    ['nuts','Горіх волоський',180,'кг','Волоські горіхи в шкаралупі та очищені',13,'Ваш крафт побачать тут'],
+    ['honey','Мед різнотрав’я',220,'банка','Банка прозорого золотого меду',14,'Є мед? Покажіть його тут'],
+    ['dairy','Молоко фермерське',45,'л','Скляна пляшка свіжого молока',15,'Молоко вашого господарства — сюди'],
+    ['dairy','Бринза овеча',190,'500 г','Біла українська овеча бринза',16,'Ваша бринза шукає своїх'],
+    ['dairy','Сир витриманий',320,'кг','Клин витриманого твердого сиру',17,'Сир може продаватися тут'],
+    ['meat','Ковбаса копчена',390,'кг','Реміснича копчена ковбаса',18,'Додайте домашній смак'],
+    ['eggs','Яйця перепелині',75,'20 шт','Перепелині яйця з природним крапом',19,'Ваші яйця — у вітрині'],
+    ['fish','Таранька в’ялена',280,'кг','В’ялена ціла таранька',20,'Ваша риба — у стрічці'],
+    ['fish','Форель копчена',460,'кг','Ціла копчена форель',21,'Коптите? Покажіть покупцям'],
+    ['dry-goods','Гриби сушені',210,'100 г','Сушені лісові гриби',22,'Є гриби? Додайте їх сюди'],
+    ['preserves','Кімчі домашнє',165,'банка','Скляна банка домашнього кімчі',23,'Ваші заготовки — на виду'],
+    ['craft','Кошик лозовий',650,'шт','Плетений вручну кошик з лози',24,'Створюєте руками? Це ваше місце']
+  ].map(([cat,title,price,unit,alt,sprite,sticker]) => ({cat,title,price,unit,alt,sprite,sticker}));
+
   const categoryMeta = new Map(CATEGORIES.map(([slug, name, emoji]) => [slug, { name, emoji }]));
 
   function card(item) {
     const meta = categoryMeta.get(item.cat) || { name: 'Локальний продукт', emoji: '🌱' };
-    const photo = PHOTOS[item.cat] || '/assets/ridne-editorial-hero.webp';
-    return `
-      <article class="product demo-showcase-card" data-demo-category="${esc(item.cat)}">
-        <div class="product-media">
-          <img src="${esc(photo)}" width="640" height="480" loading="lazy" decoding="async" alt="Ілюстративне фото: ${esc(item.title)}">
-          <span class="demo-badge">Приклад · не продається</span>
+      const photo = PHOTOS[item.cat] || '/assets/ridne-editorial-hero.webp';
+      return `
+        <article class="product demo-showcase-card" data-demo-category="${esc(item.cat)}">
+          <div class="product-media">
+          <div class="demo-sprite sprite-${item.sprite}" role="img" aria-label="${esc(item.alt || item.title)}" title="${esc(item.alt || item.title)}"></div>
+          <span class="demo-sticker sticker-${(item.sprite % 8) + 1}">${esc(item.sticker)}</span>
         </div>
         <div class="product-body">
           <p class="category-label">${meta.emoji} ${esc(meta.name)}</p>
@@ -105,7 +135,7 @@
 
     mount.classList.remove('demo-groups');
     const selected = document.querySelector('#filter-category')?.value || '';
-    mount.innerHTML = ITEMS.filter((item) => !selected || item.cat === selected).map(card).join('');
+    mount.innerHTML = EXACT_ITEMS.filter((item) => !selected || item.cat === selected).map(card).join('');
 
     mount.querySelectorAll('img').forEach((img) => {
       img.addEventListener('error', () => {
@@ -115,7 +145,7 @@
 
     const note = document.querySelector('#demo-catalog .demo-note');
     if (note) {
-      note.innerHTML = '<strong>26 демонстраційних позицій.</strong> Ціни — орієнтири станом на 12.09.2026. Ці картки не є пропозиціями продавців.';
+      note.innerHTML = '<strong>25 точних демонстраційних позицій.</strong> Кожна картка прив’язана до власної клітинки спрайта. Це місця для майбутніх товарів виробників.';
     }
 
     const summary = document.querySelector('#demo-catalog > summary');
@@ -148,7 +178,11 @@
     const style = document.createElement('style');
     style.id = 'ridne-showcase-styles';
     style.textContent = `
-      .demo-showcase-card .product-media img{width:100%;height:100%;object-fit:cover}
+      .demo-showcase-card .product-media{aspect-ratio:1/1}
+      .demo-showcase-card .demo-sprite{width:100%;height:100%;background-image:url('/assets/products/ridne-products-sprite-5x5.webp');background-size:500% 500%;background-repeat:no-repeat;transition:transform .25s ease,filter .25s ease}
+      .demo-showcase-card:hover .demo-sprite{transform:scale(1.035);filter:saturate(1.04)}
+      .demo-showcase-card .demo-sticker{position:absolute;z-index:2;top:10px;left:8px;max-width:calc(100% - 16px);padding:7px 10px;border:2px solid rgba(17,17,17,.9);border-radius:12px 14px 10px 13px;box-shadow:3px 4px 0 rgba(17,17,17,.9);font-size:clamp(.67rem,1vw,.78rem);font-weight:900;line-height:1.05;color:#102016;transform:rotate(-2deg)}
+      .demo-showcase-card .sticker-1{background:#d9ff43}.demo-showcase-card .sticker-2{background:#ff9b3d;transform:rotate(2deg)}.demo-showcase-card .sticker-3{background:#ff79bd;transform:rotate(-3deg)}.demo-showcase-card .sticker-4{background:#ffe45b;transform:rotate(1deg)}.demo-showcase-card .sticker-5{background:#65d8ff;transform:rotate(-1deg)}.demo-showcase-card .sticker-6{background:#b8a3ff;transform:rotate(3deg)}.demo-showcase-card .sticker-7{background:#6ff0c8;transform:rotate(-2deg)}.demo-showcase-card .sticker-8{background:#ff6f61;transform:rotate(2deg)}
       .demo-price-source{display:block;margin-top:7px;line-height:1.35;opacity:.66}
       .demo-risk{display:block;margin-top:7px;color:var(--green,#0b5d3b);font-size:.72rem;font-weight:700}
     `;
