@@ -1,5 +1,14 @@
 # RIDNE Project Memory
 
+## 2026-09-15 — Flat editorial redesign, phase 1
+
+- Preserve and update the existing SEO foundation; do not delete `robots.txt`, `sitemap.xml`, structured data or useful indexed routes.
+- Visual direction: calm editorial local-food marketplace with flat geometry, large typography, warm ivory, deep green, lime, pink and orange accents.
+- The homepage must expose the buyer/seller choice and product discovery immediately; it must not become a long corporate landing page.
+- Use the current circular RIDNE leaf/field/wheat logo supplied on 2026-09-15 across header, footer, social metadata and PWA icons.
+- Responsive priority: compact product-first desktop, two-column mobile product grid, persistent mobile navigation, touch targets at least 44px.
+- Continue the redesign gradually across onboarding, product detail, seller account and purchase-request flow without breaking Supabase or Telegram integration.
+
 ## 2026-09-11 — Launch monetization decision
 
 - RIDNE will **not monetize the first 50 product-listing applications** submitted through the Telegram bot.
