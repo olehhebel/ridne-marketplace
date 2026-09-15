@@ -1,0 +1,19 @@
+:root{--ridne-shell-green:#0b5d3b;--ridne-shell-ink:#17211c;--ridne-shell-muted:#66716b;--ridne-shell-line:#dfe4e0;--ridne-shell-soft:#f1f3f1}
+html{scroll-padding-top:84px}body{overflow-x:clip}
+.ridne-site-header{position:sticky;top:0;z-index:85;background:rgba(255,255,255,.96);backdrop-filter:blur(16px);border-bottom:1px solid var(--ridne-shell-line);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}
+.ridne-site-bar{width:min(1180px,calc(100% - 32px));min-height:72px;margin:0 auto;display:flex;align-items:center;gap:24px}
+.ridne-site-brand{display:inline-flex;align-items:center;gap:10px;flex:none;color:var(--ridne-shell-ink);text-decoration:none}
+.ridne-site-brand img{width:48px;height:48px;display:block;object-fit:cover;border-radius:50%;background:#07130d}
+.ridne-site-brand strong{font-size:1.05rem;letter-spacing:-.04em}
+.ridne-site-nav{display:flex;align-items:center;gap:4px;margin-left:auto}
+.ridne-site-nav a{min-height:42px;display:inline-flex;align-items:center;padding:0 13px;border-radius:22px;color:var(--ridne-shell-ink);text-decoration:none;font-size:.9rem;font-weight:700}
+.ridne-site-nav a:hover{background:var(--ridne-shell-soft)}
+.ridne-account-link{min-height:44px;display:inline-flex;align-items:center;justify-content:center;padding:0 17px;border-radius:24px;background:var(--ridne-shell-green);color:#fff!important;text-decoration:none;font-weight:800;font-size:.9rem}
+.ridne-site-footer{margin-top:64px;border-top:1px solid var(--ridne-shell-line);background:#fff;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}
+.ridne-site-footer-inner{width:min(1180px,calc(100% - 32px));min-height:96px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:24px;color:var(--ridne-shell-muted);font-size:.84rem}
+.ridne-site-footer nav{display:flex;align-items:center;gap:8px 22px;flex-wrap:wrap}
+.ridne-site-footer a{color:var(--ridne-shell-ink);text-decoration:none;font-weight:700}
+.ridne-site-footer a:hover{text-decoration:underline}
+.legal{width:min(760px,calc(100% - 32px))!important;max-width:760px!important;margin:0 auto!important;padding:56px 0 100px!important}
+.legal>.eyebrow{margin-bottom:12px}.legal>h1{font-size:clamp(2.5rem,7vw,4.8rem);line-height:.96;margin:0 0 18px}.legal>h2{font-size:1.55rem;margin:38px 0 10px}.legal>p{font-size:1rem;line-height:1.72}.legal>p:first-of-type{margin-bottom:34px}
+@media(max-width:700px){html{scroll-padding-top:72px}.ridne-site-bar{width:calc(100% - 24px);min-height:64px;gap:12px}.ridne-site-brand img{width:42px;height:42px}.ridne-site-brand strong{font-size:1rem}.ridne-site-nav{display:none}.ridne-account-link{margin-left:auto;min-height:42px;padding-inline:15px;font-size:.82rem}.ridne-site-footer{margin-top:42px}.ridne-site-footer-inner{min-height:0;padding:28px 0 92px;align-items:flex-start;flex-direction:column;gap:16px}.ridne-site-footer nav{gap:10px 18px}.legal{padding:36px 0 96px!important}.legal>h1{font-size:2.55rem}.legal>h2{font-size:1.35rem;margin-top:32px}.legal>p{line-height:1.65}}

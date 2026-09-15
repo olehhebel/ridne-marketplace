@@ -9,6 +9,7 @@ window.RIDNE_TELEGRAM = {
   if (!config || !config.enabled) return;
 
   function mount() {
+    if (document.body.hasAttribute("data-no-floating-chatbot")) return;
     if (document.querySelector(".chatbot-dock")) return;
 
     if (!document.querySelector('link[href="/chatbot.css"]')) {
