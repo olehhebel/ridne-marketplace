@@ -22,19 +22,19 @@
   ];
 
   const PHOTOS = {
-    vegetables: 'https://unsplash.com/photos/CthScWvGvsM/download?force=true&w=900',
-    fruits: 'https://unsplash.com/photos/uYAY3yCjVS8/download?force=true&w=900',
-    berries: 'https://unsplash.com/photos/sqzu9xKLcaI/download?force=true&w=900',
-    honey: 'https://unsplash.com/photos/yQzrDgU-KAI/download?force=true&w=900',
-    herbs: 'https://unsplash.com/photos/Zz2prRbsgsk/download?force=true&w=900',
-    nuts: 'https://unsplash.com/photos/uOnt5frudDU/download?force=true&w=900',
-    preserves: 'https://unsplash.com/photos/dPwGdunfxZU/download?force=true&w=900',
-    craft: 'https://unsplash.com/photos/13-sB80ByvA/download?force=true&w=900',
-    'dry-goods': 'https://unsplash.com/photos/xHd0z8rvJDE/download?force=true&w=900',
-    fish: 'https://unsplash.com/photos/JozPmdkMhwI/download?force=true&w=900',
-    dairy: '/assets/ridne-editorial-hero.webp',
-    meat: 'https://unsplash.com/photos/I3mswxNbjK0/download?force=true&w=900',
-    eggs: 'https://unsplash.com/photos/Jo2tCHAy-8E/download?force=true&w=900'
+    vegetables: '/assets/products/product-00.webp',
+    fruits: '/assets/products/product-01.webp',
+    berries: '/assets/products/product-02.webp',
+    honey: '/assets/products/product-03.webp',
+    herbs: '/assets/products/product-04.webp',
+    nuts: '/assets/products/product-05.webp',
+    preserves: '/assets/products/product-06.webp',
+    craft: '/assets/products/product-07.webp',
+    'dry-goods': '/assets/products/product-08.webp',
+    fish: '/assets/products/product-09.webp',
+    dairy: '/assets/products/product-10.webp',
+    meat: '/assets/products/product-11.webp',
+    eggs: '/assets/products/product-12.webp'
   };
 
   const ITEMS = [
