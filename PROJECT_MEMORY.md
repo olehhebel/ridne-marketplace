@@ -39,6 +39,8 @@
 ## Moderation and publication
 
 - Seller verification and product moderation remain required.
+- Owner moderation lives at `/admin/moderation/` and is restricted server-side to the verified `doctorgebel@gmail.com` account.
+- All new seller and product submissions from web and Telegram must enter one idempotent moderation queue and notify the private `RIDNE Administration` Telegram channel, with the owner's private bot chat as fallback.
 - `free_launch`, `paid`, and `legacy` listing states may be eligible for publication, provided the seller is verified, the category is allowed, and the product is approved.
 - Free launch applications must never bypass moderation.
 
