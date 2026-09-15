@@ -116,3 +116,45 @@ begin
 end $$;
 revoke execute on function public.submit_web_product(uuid,uuid) from public,anon,authenticated;
 grant execute on function public.submit_web_product(uuid,uuid) to service_role;
+
+-- Unified owner moderation queue for web and Telegram submissions.
+alter table public.bot_runtime_config add column if not exists moderation_chat_id bigint;
+
+create table if not exists public.moderation_notifications (
+ id uuid primary key default gen_random_uuid(),
+ target_type public.moderation_target_type not null,
+ target_id uuid not null,
+ status text not null default 'pending' check(status in ('pending','sending','sent','failed')),
+ attempts integer not null default 0,
+ last_error text,
+ telegram_chat_id bigint,
+ telegram_message_id bigint,
+ claimed_at timestamptz,
+ sent_at timestamptz,
+ created_at timestamptz not null default now(),
+ unique(target_type,target_id)
+);
+alter table public.moderation_notifications enable row level security;
+revoke all on public.moderation_notifications from anon,authenticated;
+grant all on public.moderation_notifications to service_role;
+
+create or replace function public.claim_moderation_notification(p_target_type public.moderation_target_type,p_target_id uuid)
+returns setof public.moderation_notifications language plpgsql security invoker set search_path='' as $$
+begin
+ insert into public.moderation_notifications(target_type,target_id)
+ values(p_target_type,p_target_id)
+ on conflict(target_type,target_id) do nothing;
+ return query
+ update public.moderation_notifications
+ set status='sending',claimed_at=now(),attempts=attempts+1
+ where target_type=p_target_type and target_id=p_target_id
+   and (status in ('pending','failed') or (status='sending' and claimed_at<now()-interval '10 minutes'))
+   and attempts<8
+ returning *;
+end $$;
+revoke execute on function public.claim_moderation_notification(public.moderation_target_type,uuid) from public,anon,authenticated;
+grant execute on function public.claim_moderation_notification(public.moderation_target_type,uuid) to service_role;
+
+insert into storage.buckets(id,name,public,file_size_limit,allowed_mime_types)
+values('ridne-product-images','ridne-product-images',true,5242880,array['image/jpeg','image/png','image/webp'])
+on conflict(id) do update set public=true,file_size_limit=excluded.file_size_limit,allowed_mime_types=excluded.allowed_mime_types;
