@@ -8,10 +8,10 @@
   <meta name="theme-color" content="#ffffff">
   <link rel="icon" href="/assets/ridne-logo-2026.webp">
   <link rel="stylesheet" href="/marketplace/market.css?v=20260915-admin1">
-  <link rel="stylesheet" href="/admin/moderation/moderation.css?v=20260915-admin1">
+  <link rel="stylesheet" href="/admin/moderation/moderation.css?v=20260915-admin2">
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script defer src="/marketplace/config.js"></script>
-  <script defer src="/admin/moderation/moderation.js?v=20260915-admin1"></script>
+  <script defer src="/admin/moderation/moderation.js?v=20260915-admin2"></script>
 </head>
 <body class="moderation-page">
   <a class="skip" href="#main">До черги модерації</a>
@@ -19,10 +19,21 @@
     <div class="account-header-inner header-row">
       <a class="brand" href="/" aria-label="РІДНЕ — на головну"><img src="/assets/ridne-logo-2026.webp" width="48" height="48" alt=""><span>РІДНЕ</span></a>
       <strong class="admin-title">Administration</strong>
-      <a class="btn tertiary" href="/account/">Мій кабінет</a>
+      <button class="btn tertiary" id="admin-logout" type="button" hidden>Вийти</button>
     </div>
   </header>
   <main class="moderation-main" id="main">
+    <section class="admin-login" id="admin-login" aria-labelledby="admin-login-title">
+      <span class="account-kicker">RIDNE Administration</span>
+      <h1 id="admin-login-title">Вхід власника</h1>
+      <p>Окремий захищений вхід до модерації. Кабінет виробника не потрібен.</p>
+      <form id="admin-login-form">
+        <label class="field"><span>Електронна пошта адміністратора</span><input type="email" name="email" value="doctorgebel@gmail.com" readonly autocomplete="email"></label>
+        <p class="admin-login-status" id="admin-login-status" role="status"></p>
+        <button class="btn primary" type="submit">Отримати посилання для входу</button>
+      </form>
+    </section>
+    <div id="admin-app" hidden>
     <section class="moderation-head">
       <div><span class="account-kicker">RIDNE Administration</span><h1>Черга модерації</h1><p>Профілі та товари з сайту й Telegram в одному місці.</p></div>
       <button class="btn tertiary" id="sync-telegram" type="button">Надіслати чергу в Telegram</button>
@@ -34,6 +45,7 @@
     <p class="admin-status" id="admin-status" role="status">Завантажуємо заявки…</p>
     <section class="queue-section" aria-labelledby="seller-heading"><div class="queue-heading"><h2 id="seller-heading">Профілі виробників</h2></div><div class="moderation-grid" id="seller-queue"></div></section>
     <section class="queue-section" aria-labelledby="product-heading"><div class="queue-heading"><h2 id="product-heading">Товари</h2></div><div class="moderation-grid product-queue" id="product-queue"></div></section>
+    </div>
   </main>
   <div class="toast" id="toast" role="status" hidden></div>
 </body>
