@@ -1,9 +1,18 @@
 # RIDNE Project Memory
 
-## 2026-09-15 — Flat editorial redesign, phase 1
+## 2026-09-15 — Permanent design direction: Pinterest-first
+
+- Pinterest is the primary and persistent UI reference for RIDNE. Do not use LinkedIn as a design reference.
+- The homepage is an image-first discovery feed: prominent rounded search, horizontal category chips, compact filters and a responsive masonry product grid.
+- Product photography carries the interface. Avoid oversized advertising heroes, hard black borders, brutalist blocks, rotated labels and decorative visual noise.
+- Use calm neutral surfaces and RIDNE green. Primary buttons use white on deep green; light green surfaces always use dark green text.
+- Mobile defaults to two masonry columns, a compact sticky header and bottom navigation. No page-level horizontal overflow at any supported width.
+- Buyer discovery begins immediately and does not require registration. Seller onboarding remains a secondary action.
+
+## 2026-09-15 — Superseded flat editorial redesign, phase 1
 
 - Preserve and update the existing SEO foundation; do not delete `robots.txt`, `sitemap.xml`, structured data or useful indexed routes.
-- Visual direction: calm editorial local-food marketplace with flat geometry, large typography, warm ivory, deep green, lime, pink and orange accents.
+- This visual direction is superseded by the Pinterest-first system above.
 - The homepage must expose the buyer/seller choice and product discovery immediately; it must not become a long corporate landing page.
 - Use the current circular RIDNE leaf/field/wheat logo supplied on 2026-09-15 across header, footer, social metadata and PWA icons.
 - Responsive priority: compact product-first desktop, two-column mobile product grid, persistent mobile navigation, touch targets at least 44px.

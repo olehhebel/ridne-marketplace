@@ -32,7 +32,7 @@
     craft: 'https://unsplash.com/photos/13-sB80ByvA/download?force=true&w=900',
     'dry-goods': 'https://unsplash.com/photos/xHd0z8rvJDE/download?force=true&w=900',
     fish: 'https://unsplash.com/photos/JozPmdkMhwI/download?force=true&w=900',
-    dairy: '/assets/seasonal-harvest.webp',
+    dairy: '/assets/ridne-editorial-hero.webp',
     meat: 'https://unsplash.com/photos/I3mswxNbjK0/download?force=true&w=900',
     eggs: 'https://unsplash.com/photos/Jo2tCHAy-8E/download?force=true&w=900'
   };
@@ -82,9 +82,9 @@
 
   function card(item) {
     const meta = categoryMeta.get(item.cat) || { name: 'Локальний продукт', emoji: '🌱' };
-    const photo = PHOTOS[item.cat] || '/assets/seasonal-harvest.webp';
+    const photo = PHOTOS[item.cat] || '/assets/ridne-editorial-hero.webp';
     return `
-      <article class="product demo-showcase-card">
+      <article class="product demo-showcase-card" data-demo-category="${esc(item.cat)}">
         <div class="product-media">
           <img src="${esc(photo)}" width="640" height="480" loading="lazy" decoding="async" alt="Ілюстративне фото: ${esc(item.title)}">
           <span class="demo-badge">Приклад · не продається</span>
@@ -92,11 +92,9 @@
         <div class="product-body">
           <p class="category-label">${meta.emoji} ${esc(meta.name)}</p>
           <h3>${esc(item.title)}</h3>
-          <p>Так може виглядати товар українського виробника на РІДНЕ.</p>
           <span class="price">${Number(item.price).toLocaleString('uk-UA')} ₴ <small>/ ${esc(item.unit)}</small></span>
-          <small class="demo-price-source">Орієнтир ціни: ${esc(item.source)}</small>
-          ${item.regulated ? '<small class="demo-risk">Публікація цієї категорії — після перевірки профілю та вимог до безпечності.</small>' : ''}
-          <a class="btn primary demo-card-cta" href="/signup/?role=seller">Додати свій товар</a>
+          <small class="demo-price-source">Орієнтир: ${esc(item.source)}</small>
+          ${item.regulated ? '<small class="demo-risk">Після перевірки виробника</small>' : ''}
         </div>
       </article>`;
   }
@@ -105,33 +103,23 @@
     const mount = document.querySelector('#demo-products');
     if (!mount) return;
 
-    mount.classList.add('demo-groups');
-    mount.innerHTML = CATEGORIES.map(([slug, name, emoji]) => {
-      const products = ITEMS.filter((item) => item.cat === slug);
-      return `
-        <section class="showcase-category" id="demo-${esc(slug)}" aria-labelledby="demo-${esc(slug)}-title">
-          <div class="showcase-category-head">
-            <span class="showcase-emoji" aria-hidden="true">${emoji}</span>
-            <div><p class="section-kicker">Приклад категорії</p><h3 id="demo-${esc(slug)}-title">${esc(name)}</h3></div>
-            <span class="showcase-count">2 позиції</span>
-          </div>
-          <div class="showcase-grid">${products.map(card).join('')}</div>
-        </section>`;
-    }).join('');
+    mount.classList.remove('demo-groups');
+    const selected = document.querySelector('#filter-category')?.value || '';
+    mount.innerHTML = ITEMS.filter((item) => !selected || item.cat === selected).map(card).join('');
 
     mount.querySelectorAll('img').forEach((img) => {
       img.addEventListener('error', () => {
-        if (!img.src.endsWith('/assets/seasonal-harvest.webp')) img.src = '/assets/seasonal-harvest.webp';
+        if (!img.src.endsWith('/assets/ridne-editorial-hero.webp')) img.src = '/assets/ridne-editorial-hero.webp';
       }, { once: true });
     });
 
     const note = document.querySelector('#demo-catalog .demo-note');
     if (note) {
-      note.innerHTML = '<strong>26 демонстраційних позицій · 13 категорій.</strong> Ціни — ринкові онлайн-орієнтири, актуалізовані 12.09.2026; у конкретного виробника вони можуть відрізнятися. Картки не є пропозиціями продавців і не доступні для замовлення.';
+      note.innerHTML = '<strong>26 демонстраційних позицій.</strong> Ціни — орієнтири станом на 12.09.2026. Ці картки не є пропозиціями продавців.';
     }
 
     const summary = document.querySelector('#demo-catalog > summary');
-    if (summary) summary.textContent = 'Подивитися, як можуть виглядати товари';
+    if (summary) summary.innerHTML = 'Ідеї для вашого кошика <span aria-hidden="true">⌄</span>';
   }
 
   function exposeAllCategories() {
@@ -160,21 +148,9 @@
     const style = document.createElement('style');
     style.id = 'ridne-showcase-styles';
     style.textContent = `
-      #demo-products.demo-groups{display:block}
-      .showcase-category{margin:28px 0 44px}
-      .showcase-category:first-child{margin-top:22px}
-      .showcase-category-head{display:flex;align-items:center;gap:12px;margin:0 0 14px;padding-bottom:12px;border-bottom:1px solid var(--line,#d9d3c8)}
-      .showcase-category-head h3{margin:1px 0 0;font-size:clamp(1.25rem,2vw,1.7rem)}
-      .showcase-category-head .section-kicker{margin:0;font-size:.68rem}
-      .showcase-emoji{font-size:1.55rem;line-height:1}
-      .showcase-count{margin-left:auto;font-size:.78rem;opacity:.65;white-space:nowrap}
-      .showcase-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
       .demo-showcase-card .product-media img{width:100%;height:100%;object-fit:cover}
-      .demo-showcase-card .product-body{display:flex;flex-direction:column;align-items:flex-start}
       .demo-price-source{display:block;margin-top:7px;line-height:1.35;opacity:.66}
-      .demo-risk{display:block;margin-top:8px;padding:8px 10px;border:1px solid currentColor;border-radius:10px;font-size:.74rem;line-height:1.35;opacity:.72}
-      .demo-card-cta{margin-top:14px;width:100%;justify-content:center}
-      @media(max-width:680px){.showcase-grid{grid-template-columns:1fr}.showcase-category{margin-bottom:36px}.showcase-count{font-size:.7rem}}
+      .demo-risk{display:block;margin-top:7px;color:var(--green,#0b5d3b);font-size:.72rem;font-weight:700}
     `;
     document.head.appendChild(style);
   }
@@ -182,4 +158,7 @@
   injectStyles();
   exposeAllCategories();
   renderShowcase();
+  document.querySelector('#filter-category')?.addEventListener('change', renderShowcase);
+  document.querySelector('#categories')?.addEventListener('click', () => setTimeout(renderShowcase, 0));
+  document.querySelector('#clear-filters')?.addEventListener('click', () => setTimeout(renderShowcase, 0));
 })();
