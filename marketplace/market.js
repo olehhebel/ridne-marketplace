@@ -77,6 +77,7 @@ function renderDashboard(p,data){
       ${seller?'<button class="btn primary hero-action" data-open-product>Додати товар</button>':'<a class="btn primary hero-action" href="/#catalog">До каталогу</a>'}
     </section>
     <nav class="account-tabs" aria-label="Розділи кабінету">
+      ${data.is_admin?'<a href="/admin/moderation/">Модерація</a>':''}
       ${seller?'<a href="#my-products" aria-current="page">Товари</a>':''}
       <a href="#orders" ${seller?'':'aria-current="page"'}>Замовлення</a>
       <a href="#profile">Профіль</a>

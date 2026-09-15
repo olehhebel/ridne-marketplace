@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>Модерація — РІДНЕ</title>
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="theme-color" content="#ffffff">
+  <link rel="icon" href="/assets/ridne-logo-2026.webp">
+  <link rel="stylesheet" href="/marketplace/market.css?v=20260915-admin1">
+  <link rel="stylesheet" href="/admin/moderation/moderation.css?v=20260915-admin1">
+  <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script defer src="/marketplace/config.js"></script>
+  <script defer src="/admin/moderation/moderation.js?v=20260915-admin1"></script>
+</head>
+<body class="moderation-page">
+  <a class="skip" href="#main">До черги модерації</a>
+  <header class="account-site-header">
+    <div class="account-header-inner header-row">
+      <a class="brand" href="/" aria-label="РІДНЕ — на головну"><img src="/assets/ridne-logo-2026.webp" width="48" height="48" alt=""><span>РІДНЕ</span></a>
+      <strong class="admin-title">Administration</strong>
+      <a class="btn tertiary" href="/account/">Мій кабінет</a>
+    </div>
+  </header>
+  <main class="moderation-main" id="main">
+    <section class="moderation-head">
+      <div><span class="account-kicker">RIDNE Administration</span><h1>Черга модерації</h1><p>Профілі та товари з сайту й Telegram в одному місці.</p></div>
+      <button class="btn tertiary" id="sync-telegram" type="button">Надіслати чергу в Telegram</button>
+    </section>
+    <div class="moderation-counts" aria-live="polite">
+      <div><strong id="seller-count">—</strong><span>профілів</span></div>
+      <div><strong id="product-count">—</strong><span>товарів</span></div>
+    </div>
+    <p class="admin-status" id="admin-status" role="status">Завантажуємо заявки…</p>
+    <section class="queue-section" aria-labelledby="seller-heading"><div class="queue-heading"><h2 id="seller-heading">Профілі виробників</h2></div><div class="moderation-grid" id="seller-queue"></div></section>
+    <section class="queue-section" aria-labelledby="product-heading"><div class="queue-heading"><h2 id="product-heading">Товари</h2></div><div class="moderation-grid product-queue" id="product-queue"></div></section>
+  </main>
+  <div class="toast" id="toast" role="status" hidden></div>
+</body>
+</html>
