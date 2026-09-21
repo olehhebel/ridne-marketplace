@@ -1,31 +1,884 @@
-import { createClient } from 'npm:@supabase/supabase-js@2.57.4';
-const url=Deno.env.get('SUPABASE_URL')!;
-const db=createClient(url,Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,{auth:{persistSession:false,autoRefreshToken:false}});
-const botToken=Deno.env.get('TELEGRAM_BOT_TOKEN')||'';
-const adminEmail='doctorgebel@gmail.com';
-const regions=['Вінницька','Волинська','Дніпропетровська','Донецька','Житомирська','Закарпатська','Запорізька','Івано-Франківська','Київська','Кіровоградська','Луганська','Львівська','Миколаївська','Одеська','Полтавська','Рівненська','Сумська','Тернопільська','Харківська','Херсонська','Хмельницька','Черкаська','Чернівецька','Чернігівська','АР Крим','м. Київ','м. Севастополь'];
-const allowedOrigins=['https://ridne.store','https://www.ridne.store'];
-const text=(v:unknown,max:number)=>typeof v==='string'?v.trim().slice(0,max):'';
-const html=(v:unknown)=>String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
-const isUuid=(v:unknown)=>typeof v==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v);
-function validateProfile(p:any){if(!p||!['buyer','seller'].includes(p.account_type))throw Error('Оберіть тип профілю.');if(text(p.display_name,101).length<2||text(p.display_name,101).length>100)throw Error('Перевірте ім’я.');if(!regions.includes(p.oblast)||text(p.locality,101).length<2||text(p.locality,101).length>100)throw Error('Перевірте локацію.');if(!Array.isArray(p.category_slugs)||p.category_slugs.length<1||p.category_slugs.length>5||p.category_slugs.some((x:unknown)=>typeof x!=='string'))throw Error('Оберіть від 1 до 5 категорій.');if(p.consent!==true)throw Error('Потрібна згода з правилами.');if(p.account_type==='seller'&&(!['craft','farm','household'].includes(p.producer_type)||!['fop','company','individual','planning'].includes(p.business_status)||!text(p.shop_name,100)))throw Error('Заповніть профіль виробництва.');return {account_type:p.account_type,display_name:text(p.display_name,100),oblast:p.oblast,locality:text(p.locality,100),category_slugs:[...new Set(p.category_slugs)],producer_type:p.producer_type,business_status:p.business_status,shop_name:text(p.shop_name,100),consent:true};}
-async function notify(userId:string){const mailKey=Deno.env.get('RESEND_API_KEY');const mailFrom=Deno.env.get('RIDNE_MAIL_FROM');if(!mailKey||!mailFrom)return {notification:'pending_configuration'};const {data:claimed,error:claimError}=await db.rpc('claim_registration_notice',{p_user_id:userId});if(claimError)throw claimError;if(!claimed?.length)return {notification:'already_processed'};const row=claimed[0];const {data:p,error}=await db.from('web_profiles').select('display_name,email,account_type,category_slugs,oblast,locality,created_at').eq('user_id',userId).single();if(error)throw error;try{const r=await fetch('https://api.resend.com/emails',{method:'POST',headers:{Authorization:'Bearer '+mailKey,'Content-Type':'application/json','Idempotency-Key':'ridne-registration-'+row.id},body:JSON.stringify({from:mailFrom,to:['doctorgebel@gmail.com'],subject:'Рідне: новий '+(p.account_type==='seller'?'виробник':'покупець'),text:`Створено підтверджений профіль Рідне.\nІм’я: ${p.display_name}\nПошта: ${p.email}\nРоль: ${p.account_type==='seller'?'Виробник':'Покупець'}\nКатегорії: ${p.category_slugs.join(', ')}\nЛокація: ${p.locality}, ${p.oblast}\nЧас: ${p.created_at}\nКабінет: https://ridne.store/account/\n\nСтатус ФОП не означає перевірку виробника.`})});if(!r.ok)throw Error('mail_provider_'+r.status);const {error:updateError}=await db.from('registration_notifications').update({status:'sent',sent_at:new Date().toISOString(),last_error:null}).eq('id',row.id);if(updateError)throw updateError;return {notification:'sent'};}catch(err){await db.from('registration_notifications').update({status:'failed',last_error:err instanceof Error?err.message:'delivery_failed'}).eq('id',row.id);return {notification:'queued_for_retry'};}}
-
-async function telegram(method:string,payload:Record<string,unknown>){if(!botToken)return null;const r=await fetch(`https://api.telegram.org/bot${botToken}/${method}`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)});const result=await r.json();if(!r.ok||!result.ok)throw Error(`telegram_${method}_${r.status}`);return result.result;}
-async function moderationDestination(){const {data,error}=await db.from('bot_runtime_config').select('moderation_chat_id,admin_telegram_id').eq('id',1).single();if(error)throw error;return data.moderation_chat_id||data.admin_telegram_id||null;}
-async function notifyModeration(targetType:'seller'|'product',targetId:string){
- if(!botToken)return {moderation_notification:'pending_configuration'};const destination=await moderationDestination();if(!destination)return {moderation_notification:'pending_configuration'};
- const {data:claimed,error:claimError}=await db.rpc('claim_moderation_notification',{p_target_type:targetType,p_target_id:targetId});if(claimError)throw claimError;if(!claimed?.length)return {moderation_notification:'already_processed'};const notice=claimed[0];
- try{let message='',keyboard:any;
-  if(targetType==='seller'){const {data:s,error}=await db.from('seller_profiles').select('id,display_name,producer_type,email,oblast,locality').eq('id',targetId).single();if(error)throw error;message=`<b>Новий профіль на перевірку</b>\n${html(s.display_name)}\n${html([s.locality,s.oblast].filter(Boolean).join(', '))}\n${html(s.email||'Без email')}\nТип: ${html(s.producer_type||'не вказано')}`;keyboard={inline_keyboard:[[{text:'✅ Схвалити',callback_data:`as:approve:${s.id}`},{text:'↩️ Уточнення',callback_data:`as:changes:${s.id}`}]]};}
-  else{const {data:p,error}=await db.from('products').select('id,title,price_uah,unit,origin_oblast,origin_locality,seller_profiles(display_name,verification_status)').eq('id',targetId).single();if(error)throw error;const s=Array.isArray(p.seller_profiles)?p.seller_profiles[0]:p.seller_profiles;message=`<b>Новий товар на модерацію</b>\n${html(p.title)}\n${Number(p.price_uah).toFixed(2)} грн / ${html(p.unit)}\nВиробник: ${html(s?.display_name||'—')}\nСтатус виробника: ${html(s?.verification_status||'—')}\n${html([p.origin_locality,p.origin_oblast].filter(Boolean).join(', '))}`;keyboard={inline_keyboard:[[{text:'✅ Опублікувати',callback_data:`ap:approve:${p.id}`},{text:'↩️ Уточнення',callback_data:`ap:changes:${p.id}`}]]};}
-  const sent=await telegram('sendMessage',{chat_id:destination,text:message,parse_mode:'HTML',disable_web_page_preview:true,reply_markup:keyboard});await db.from('moderation_notifications').update({status:'sent',telegram_chat_id:destination,telegram_message_id:sent?.message_id||null,sent_at:new Date().toISOString(),last_error:null}).eq('id',notice.id);return {moderation_notification:'sent'};
- }catch(err){await db.from('moderation_notifications').update({status:'failed',last_error:err instanceof Error?err.message:'delivery_failed'}).eq('id',notice.id);return {moderation_notification:'queued_for_retry'};}
+import { reviewFields, notifyLatestReview, replyToReview } from "./reviews.ts";
+import { ownerDashboard } from "./admin.ts";
+import {
+  createRequest,
+  requestsDashboard,
+  requestAction,
+  activateSeller,
+  updateProfile,
+} from "./flows.ts";
+import { createClient } from "npm:@supabase/supabase-js@2.57.4";
+const url = Deno.env.get("SUPABASE_URL")!;
+const db = createClient(url, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
+  auth: { persistSession: false, autoRefreshToken: false },
+});
+const botToken = Deno.env.get("TELEGRAM_BOT_TOKEN") || "";
+const adminEmail = "doctorgebel@gmail.com";
+const regions = [
+  "Вінницька",
+  "Волинська",
+  "Дніпропетровська",
+  "Донецька",
+  "Житомирська",
+  "Закарпатська",
+  "Запорізька",
+  "Івано-Франківська",
+  "Київська",
+  "Кіровоградська",
+  "Луганська",
+  "Львівська",
+  "Миколаївська",
+  "Одеська",
+  "Полтавська",
+  "Рівненська",
+  "Сумська",
+  "Тернопільська",
+  "Харківська",
+  "Херсонська",
+  "Хмельницька",
+  "Черкаська",
+  "Чернівецька",
+  "Чернігівська",
+  "АР Крим",
+  "м. Київ",
+  "м. Севастополь",
+];
+const allowedOrigins = ["https://ridne.store", "https://www.ridne.store"];
+const text = (v: unknown, max: number) =>
+  typeof v === "string" ? v.trim().slice(0, max) : "";
+const html = (v: unknown) =>
+  String(v ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
+const isUuid = (v: unknown) =>
+  typeof v === "string" &&
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    v,
+  );
+function validateProfile(p: any) {
+  if (!p || !["buyer", "seller"].includes(p.account_type))
+    throw Error("Оберіть тип профілю.");
+  if (
+    text(p.display_name, 101).length < 2 ||
+    text(p.display_name, 101).length > 100
+  )
+    throw Error("Перевірте ім’я.");
+  if (
+    !regions.includes(p.oblast) ||
+    text(p.locality, 101).length < 2 ||
+    text(p.locality, 101).length > 100
+  )
+    throw Error("Перевірте локацію.");
+  if (
+    !Array.isArray(p.category_slugs) ||
+    p.category_slugs.length < 1 ||
+    p.category_slugs.length > 5 ||
+    p.category_slugs.some((x: unknown) => typeof x !== "string")
+  )
+    throw Error("Оберіть від 1 до 5 категорій.");
+  if (p.consent !== true) throw Error("Потрібна згода з правилами.");
+  if (
+    p.account_type === "seller" &&
+    (!["craft", "farm", "household"].includes(p.producer_type) ||
+      !["fop", "company", "individual", "planning"].includes(
+        p.business_status,
+      ) ||
+      !text(p.shop_name, 100))
+  )
+    throw Error("Заповніть профіль виробництва.");
+  return {
+    account_type: p.account_type,
+    display_name: text(p.display_name, 100),
+    oblast: p.oblast,
+    locality: text(p.locality, 100),
+    category_slugs: [...new Set(p.category_slugs)],
+    producer_type: p.producer_type,
+    business_status: p.business_status,
+    shop_name: text(p.shop_name, 100),
+    consent: true,
+  };
 }
-async function adminQueue(){const [{data:sellers,error:se},{data:products,error:pe}]=await Promise.all([db.from('seller_profiles').select('id,display_name,producer_type,email,oblast,locality,verification_status,submitted_at,created_at').eq('verification_status','pending').order('submitted_at',{ascending:true,nullsFirst:false}),db.from('products').select('id,title,description,price_uah,unit,available_quantity,origin_oblast,origin_locality,storage_requirements,ingredients,submitted_at,created_at,web_image_path,public_image_urls,listing_payment_status,categories(name_uk,publication_mode),seller_profiles(id,display_name,verification_status)').eq('status','pending').order('submitted_at',{ascending:true,nullsFirst:false})]);if(se)throw se;if(pe)throw pe;const rows=await Promise.all((products||[]).map(async(p:any)=>{let image_url=p.public_image_urls?.[0]||null;if(!image_url&&p.web_image_path){const {data}=await db.storage.from('ridne-web-products').createSignedUrl(p.web_image_path,900);image_url=data?.signedUrl||null;}return {...p,web_image_path:undefined,image_url};}));return {sellers:sellers||[],products:rows};}
-async function publishWebImage(p:any){if(!p.web_image_path||p.public_image_urls?.length)return p.public_image_urls||[];const {data:original,error:de}=await db.storage.from('ridne-web-products').download(p.web_image_path);if(de||!original)throw Error('Не вдалося підготувати фото товару.');const ext=p.web_image_path.split('.').pop()||'webp';const path=`products/${p.id}/cover.${ext}`;const {error:ue}=await db.storage.from('ridne-product-images').upload(path,original,{contentType:original.type||`image/${ext}`,upsert:true});if(ue)throw ue;return [db.storage.from('ridne-product-images').getPublicUrl(path).data.publicUrl];}
-async function moderateSeller(id:string,decision:string,reason:string){if(!isUuid(id)||!['approve','reject'].includes(decision))throw Error('Неправильна дія модерації.');const patch=decision==='approve'?{verification_status:'verified',verified_at:new Date().toISOString(),rejection_reason:null}:{verification_status:'rejected',verified_at:null,rejection_reason:reason||'Потрібні уточнення'};const {data:s,error}=await db.from('seller_profiles').update(patch).eq('id',id).eq('verification_status','pending').select('id,user_id,verification_status').maybeSingle();if(error)throw error;if(!s)throw Error('Заявку вже опрацьовано або не знайдено.');if(decision==='approve')await db.from('marketplace_users').update({role:'seller'}).eq('id',s.user_id);await db.from('moderation_events').insert({target_type:'seller',seller_id:id,decision:decision==='approve'?'approved':'needs_changes',reason:decision==='approve'?null:(reason||'Потрібні уточнення')});return s;}
-async function moderateProduct(id:string,decision:string,reason:string){if(!isUuid(id)||!['approve','reject'].includes(decision))throw Error('Неправильна дія модерації.');const {data:p,error}=await db.from('products').select('*,categories(publication_mode),seller_profiles(verification_status)').eq('id',id).eq('status','pending').maybeSingle();if(error)throw error;if(!p)throw Error('Заявку вже опрацьовано або не знайдено.');const s=Array.isArray(p.seller_profiles)?p.seller_profiles[0]:p.seller_profiles;const c=Array.isArray(p.categories)?p.categories[0]:p.categories;if(decision==='approve'&&!['free_launch','paid','legacy'].includes(p.listing_payment_status))throw Error('Товар не має активного права на розміщення.');if(decision==='approve'&&(s?.verification_status!=='verified'||c?.publication_mode==='blocked'))throw Error('Спочатку схваліть виробника та перевірте категорію.');const images=decision==='approve'?await publishWebImage(p):p.public_image_urls;const patch=decision==='approve'?{status:'approved',approved_at:new Date().toISOString(),moderation_reason:null,public_image_urls:images}:{status:'rejected',approved_at:null,moderation_reason:reason||'Потрібні уточнення'};const {data:updated,error:ue}=await db.from('products').update(patch).eq('id',id).eq('status','pending').select('id,status').single();if(ue)throw ue;await db.from('moderation_events').insert({target_type:'product',product_id:id,seller_id:p.seller_id,decision:decision==='approve'?'approved':'needs_changes',reason:decision==='approve'?null:(reason||'Потрібні уточнення')});return updated;}
-async function syncPendingNotifications(){const [{data:sellers},{data:products}]=await Promise.all([db.from('seller_profiles').select('id').eq('verification_status','pending'),db.from('products').select('id').eq('status','pending')]);const results=[];for(const s of sellers||[])results.push(await notifyModeration('seller',s.id));for(const p of products||[])results.push(await notifyModeration('product',p.id));return {processed:results.length,results};}
+async function notify(userId: string) {
+  const mailKey = Deno.env.get("RESEND_API_KEY");
+  const mailFrom = Deno.env.get("RIDNE_MAIL_FROM");
+  const { data: claimed, error: claimError } = await db.rpc(
+    "claim_registration_notice",
+    { p_user_id: userId },
+  );
+  if (claimError) throw claimError;
+  if (!claimed?.length) return { notification: "already_processed" };
+  const row = claimed[0];
+  const { data: p, error } = await db
+    .from("web_profiles")
+    .select(
+      "display_name,email,account_type,category_slugs,oblast,locality,created_at",
+    )
+    .eq("user_id", userId)
+    .single();
+  if (error) throw error;
+  try {
+    const noticeText = `Нова реєстрація РІДНЕ\nІм’я: ${p.display_name}\nEmail: ${p.email}\nРоль: ${p.account_type}\nЛокація: ${[p.locality, p.oblast].filter(Boolean).join(", ") || "Не вказано"}\nАдмін-панель: https://ridne.store/admin/moderation/`;
+    let delivered = false;
+    if (mailKey && mailFrom) {
+      try {
+        const r = await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: {
+            Authorization: "Bearer " + mailKey,
+            "Content-Type": "application/json",
+            "Idempotency-Key": "ridne-registration-" + row.id,
+          },
+          body: JSON.stringify({
+            from: mailFrom,
+            to: ["doctorgebel@gmail.com"],
+            subject:
+              "Рідне: новий " +
+              (p.account_type === "seller" ? "виробник" : "покупець"),
+            text: `Створено підтверджений профіль Рідне.\nІм’я: ${p.display_name}\nПошта: ${p.email}\nРоль: ${p.account_type === "seller" ? "Виробник" : "Покупець"}\nКатегорії: ${p.category_slugs.join(", ")}\nЛокація: ${p.locality}, ${p.oblast}\nЧас: ${p.created_at}\nКабінет: https://ridne.store/account/\n\nСтатус ФОП не означає перевірку виробника.`,
+          }),
+        });
+        if (!r.ok) throw Error("mail_provider_" + r.status);
+        delivered = true;
+      } catch {
+        /* Deliver to the owner's configured Telegram when email is unavailable. */
+      }
+    }
+    if (!delivered) {
+      const destination = await moderationDestination();
+      if (!destination || !botToken) throw Error("notification_not_configured");
+      await telegram("sendMessage", { chat_id: destination, text: noticeText });
+    }
+    const { error: updateError } = await db
+      .from("registration_notifications")
+      .update({
+        status: "sent",
+        sent_at: new Date().toISOString(),
+        last_error: null,
+      })
+      .eq("id", row.id);
+    if (updateError) throw updateError;
+    return { notification: "sent" };
+  } catch (err) {
+    await db
+      .from("registration_notifications")
+      .update({
+        status: "failed",
+        last_error: err instanceof Error ? err.message : "delivery_failed",
+      })
+      .eq("id", row.id);
+    return { notification: "queued_for_retry" };
+  }
+}
 
-Deno.serve(async req=>{const origin=req.headers.get('origin')||'';const cors={'Access-Control-Allow-Origin':allowedOrigins.includes(origin)?origin:allowedOrigins[0],'Access-Control-Allow-Headers':'authorization,apikey,content-type,x-client-info','Access-Control-Allow-Methods':'POST,OPTIONS','Vary':'Origin'};const out=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...cors,'Content-Type':'application/json','Cache-Control':'no-store'}});if(req.method==='OPTIONS')return new Response(null,{headers:cors});if(req.method!=='POST')return out({error:'Method not allowed'},405);if(origin&&!allowedOrigins.includes(origin))return out({error:'Origin not allowed'},403);const auth=req.headers.get('authorization')||'';if(!auth.startsWith('Bearer '))return out({error:'Увійдіть у свій акаунт.'},401);const {data:{user},error:authError}=await db.auth.getUser(auth.slice(7));if(authError||!user?.email_confirmed_at)return out({error:'Підтвердьте пошту й увійдіть знову.'},401);if(Number(req.headers.get('content-length')||0)>7500000)return out({error:'Завеликий запит.'},413);try{const raw=await req.text();if(raw.length>7500000)return out({error:'Завеликий запит.'},413);const body=JSON.parse(raw);const isAdmin=user.email?.toLowerCase()===adminEmail;if(['admin-dashboard','moderate-seller','moderate-product','sync-moderation'].includes(body.action)){if(!isAdmin)return out({error:'Цей розділ доступний лише власнику RIDNE.'},403);if(body.action==='admin-dashboard')return out(await adminQueue());if(body.action==='moderate-seller')return out({seller:await moderateSeller(body.seller_id,body.decision,text(body.reason,1000))});if(body.action==='moderate-product')return out({product:await moderateProduct(body.product_id,body.decision,text(body.reason,1000))});return out(await syncPendingNotifications());}const {data:existing}=await db.from('web_profiles').select('*').eq('user_id',user.id).maybeSingle();if(existing){const {data:m}=await db.from('marketplace_users').select('is_blocked').eq('id',existing.marketplace_user_id).single();if(m?.is_blocked)return out({error:'Профіль призупинено. Зверніться до підтримки.'},403);}if(body.action==='complete-onboarding'){const p=validateProfile(body.profile);const {data,error}=await db.rpc('complete_web_onboarding',{p_user_id:user.id,p_profile:{...p,verified_email:user.email}});if(error)throw error;let moderation={};if(p.account_type==='seller'){const {data:seller}=await db.from('seller_profiles').select('id').eq('user_id',data.marketplace_user_id).single();if(seller)moderation=await notifyModeration('seller',seller.id);}return out({profile:data,...await notify(user.id),...moderation});}if(!existing)return out({error:'Спочатку завершіть створення профілю.'},409);if(body.action==='notify-registration')return out(await notify(user.id));if(body.action==='dashboard'){const {data:seller,error:se}=await db.from('seller_profiles').select('id,display_name,verification_status,producer_type').eq('user_id',existing.marketplace_user_id).maybeSingle();if(se)throw se;const {data:products,error:pe}=seller?await db.from('products').select('id,title,price_uah,unit,status,created_at').eq('seller_id',seller.id).order('created_at',{ascending:false}).limit(100):{data:[],error:null};if(pe)throw pe;const {data:orders,error:oe}=await db.from('orders').select('id,status,total,created_at').eq('buyer_id',existing.marketplace_user_id).order('created_at',{ascending:false}).limit(50);if(oe)throw oe;return out({seller,products,orders,is_admin:isAdmin});}if(body.action==='submit-product'){if(typeof body.product_id!=='string'||!/^[-0-9a-f]{36}$/.test(body.product_id))return out({error:'Неправильний товар.'},400);const {data,error}=await db.rpc('submit_web_product',{p_user_id:user.id,p_product_id:body.product_id});if(error)return out({error:'Подання поки недоступне. Перевірте профіль, категорію або зверніться до підтримки.'},409);return out({product:data,...await notifyModeration('product',body.product_id)});}if(body.action==='save-product'){if(existing.account_type!=='seller')return out({error:'Товари можуть додавати лише виробники.'},403);const {data:seller}=await db.from('seller_profiles').select('id,verification_status').eq('user_id',existing.marketplace_user_id).single();if(!seller||seller.verification_status==='suspended')return out({error:'Профіль виробника недоступний.'},403);const p=body.product;const {count}=await db.from('products').select('id',{count:'exact',head:true}).eq('seller_id',seller.id).gte('created_at',new Date(Date.now()-86400000).toISOString());if((count||0)>=20)return out({error:'На сьогодні досягнуто ліміт 20 чернеток.'},429);const {data:cat}=await db.from('categories').select('id,publication_mode').eq('slug',p.category_slug).eq('is_active',true).single();const price=Number(p.price_uah),qty=Number(p.available_quantity);if(!cat||text(p.title,160).length<3||!Number.isFinite(price)||price<=0||price>1000000||!Number.isFinite(qty)||qty<=0||qty>1000000||!['кг','г','л','мл','шт','банка','упаковка','пучок','ящик'].includes(p.unit)||!text(p.storage_requirements,500))return out({error:'Перевірте назву, категорію, ціну, кількість і зберігання.'},400);for(const k of ['harvest_or_production_date','best_before'])if(p[k]&&!/^\d{4}-\d{2}-\d{2}$/.test(p[k]))return out({error:'Неправильна дата.'},400);if(p.best_before&&p.harvest_or_production_date&&p.best_before<p.harvest_or_production_date)return out({error:'Термін придатності не може передувати даті виготовлення.'},400);let imagePath:string|null=null;if(p.image){const mime=p.image.type;if(!['image/jpeg','image/png','image/webp'].includes(mime)||typeof p.image.data!=='string'||p.image.data.length>7000000)return out({error:'Неправильне фото.'},400);const bytes=Uint8Array.from(atob(p.image.data),c=>c.charCodeAt(0));if(bytes.length>5242880)return out({error:'Фото має бути до 5 МБ.'},400);const valid= mime==='image/jpeg'?bytes[0]===255&&bytes[1]===216:mime==='image/png'?bytes[0]===137&&bytes[1]===80&&bytes[2]===78&&bytes[3]===71:String.fromCharCode(...bytes.slice(0,4))==='RIFF'&&String.fromCharCode(...bytes.slice(8,12))==='WEBP';if(!valid)return out({error:'Вміст файлу не відповідає формату зображення.'},400);imagePath=user.id+'/'+crypto.randomUUID()+'.'+(mime==='image/jpeg'?'jpg':mime.split('/')[1]);const {error}=await db.storage.from('ridne-web-products').upload(imagePath,bytes,{contentType:mime,upsert:false});if(error)throw error;}const {data:product,error}=await db.from('products').insert({seller_id:seller.id,category_id:cat.id,title:text(p.title,160),description:text(p.description,3000),price_uah:Math.round(price*100)/100,unit:p.unit,available_quantity:qty,origin_oblast:existing.oblast,origin_locality:existing.locality,ingredients:text(p.ingredients,1000),storage_requirements:text(p.storage_requirements,500),harvest_or_production_date:p.harvest_or_production_date||null,best_before:p.best_before||null,status:'draft',web_image_path:imagePath}).select('id,status').single();if(error){if(imagePath)await db.storage.from('ridne-web-products').remove([imagePath]);throw error;}return out({product});}return out({error:'Невідома дія.'},400);}catch(err){console.error('ridne-web request failed',err instanceof Error?err.message:'request_failed');return out({error:'Не вдалося зберегти дані. Перевірте поля та спробуйте ще раз.'},400);}});
+async function telegram(method: string, payload: Record<string, unknown>) {
+  if (!botToken) return null;
+  const r = await fetch(`https://api.telegram.org/bot${botToken}/${method}`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const result = await r.json();
+  if (!r.ok || !result.ok) throw Error(`telegram_${method}_${r.status}`);
+  return result.result;
+}
+async function moderationDestination() {
+  const { data, error } = await db
+    .from("bot_runtime_config")
+    .select("moderation_chat_id,admin_telegram_id")
+    .eq("id", 1)
+    .single();
+  if (error) throw error;
+  return data.moderation_chat_id || data.admin_telegram_id || null;
+}
+async function notifyModeration(
+  targetType: "seller" | "product",
+  targetId: string,
+) {
+  if (!botToken) return { moderation_notification: "pending_configuration" };
+  const destination = await moderationDestination();
+  if (!destination) return { moderation_notification: "pending_configuration" };
+  const { data: claimed, error: claimError } = await db.rpc(
+    "claim_moderation_notification",
+    { p_target_type: targetType, p_target_id: targetId },
+  );
+  if (claimError) throw claimError;
+  if (!claimed?.length) return { moderation_notification: "already_processed" };
+  const notice = claimed[0];
+  try {
+    let message = "",
+      keyboard: any;
+    if (targetType === "seller") {
+      const { data: s, error } = await db
+        .from("seller_profiles")
+        .select(
+          "id,display_name,producer_type,email,phone,oblast,locality,marketplace_users(telegram_user_id,telegram_username)",
+        )
+        .eq("id", targetId)
+        .single();
+      if (error) throw error;
+      message = `<b>Новий профіль на перевірку</b>\n${html(s.display_name)}\n${html([s.locality, s.oblast].filter(Boolean).join(", "))}\n${html(s.email || "Без email")}\nТип: ${html(s.producer_type || "не вказано")}\nТелефон: ${html(s.phone || "—")}\nTelegram: ${html(s.marketplace_users?.telegram_username ? "@" + s.marketplace_users.telegram_username : s.marketplace_users?.telegram_user_id || "—")}`;
+      keyboard = {
+        inline_keyboard: [
+          [
+            { text: "✅ Схвалити", callback_data: `as:approve:${s.id}` },
+            { text: "↩️ Уточнення", callback_data: `as:changes:${s.id}` },
+          ],
+        ],
+      };
+    } else {
+      const { data: p, error } = await db
+        .from("products")
+        .select(
+          "id,title,price_uah,unit,available_quantity,description,origin_oblast,origin_locality,seller_profiles(display_name,verification_status,email,phone,marketplace_users(telegram_username,telegram_user_id))",
+        )
+        .eq("id", targetId)
+        .single();
+      if (error) throw error;
+      const s = Array.isArray(p.seller_profiles)
+        ? p.seller_profiles[0]
+        : p.seller_profiles;
+      message = `<b>Новий товар на модерацію</b>\n${html(p.title)}\n${Number(p.price_uah).toFixed(2)} грн / ${html(p.unit)}\nВиробник: ${html(s?.display_name || "—")}\nСтатус виробника: ${html(s?.verification_status || "—")}\n${html([p.origin_locality, p.origin_oblast].filter(Boolean).join(", "))}\nКількість: ${html(p.available_quantity)} ${html(p.unit)}\nEmail: ${html(s?.email || "—")}\nТелефон: ${html(s?.phone || "—")}\nTelegram: ${html(s?.marketplace_users?.telegram_username ? "@" + s.marketplace_users.telegram_username : s?.marketplace_users?.telegram_user_id || "—")}`;
+      keyboard = {
+        inline_keyboard: [
+          [
+            { text: "✅ Опублікувати", callback_data: `ap:approve:${p.id}` },
+            { text: "↩️ Уточнення", callback_data: `ap:changes:${p.id}` },
+          ],
+        ],
+      };
+    }
+    keyboard.inline_keyboard.push([
+      {
+        text: "Відкрити адмін-панель",
+        url: "https://ridne.store/admin/moderation/",
+      },
+    ]);
+    const sent = await telegram("sendMessage", {
+      chat_id: destination,
+      text: message,
+      parse_mode: "HTML",
+      disable_web_page_preview: true,
+      reply_markup: keyboard,
+    });
+    await db
+      .from("moderation_notifications")
+      .update({
+        status: "sent",
+        telegram_chat_id: destination,
+        telegram_message_id: sent?.message_id || null,
+        sent_at: new Date().toISOString(),
+        last_error: null,
+      })
+      .eq("id", notice.id);
+    return { moderation_notification: "sent" };
+  } catch (err) {
+    await db
+      .from("moderation_notifications")
+      .update({
+        status: "failed",
+        last_error: err instanceof Error ? err.message : "delivery_failed",
+      })
+      .eq("id", notice.id);
+    return { moderation_notification: "queued_for_retry" };
+  }
+}
+async function publishWebImage(p: any) {
+  if (!p.web_image_path || p.public_image_urls?.length)
+    return p.public_image_urls || [];
+  const { data: original, error: de } = await db.storage
+    .from("ridne-web-products")
+    .download(p.web_image_path);
+  if (de || !original) throw Error("Не вдалося підготувати фото товару.");
+  const ext = p.web_image_path.split(".").pop() || "webp";
+  const path = `products/${p.id}/cover.${ext}`;
+  const { error: ue } = await db.storage
+    .from("ridne-product-images")
+    .upload(path, original, {
+      contentType: original.type || `image/${ext}`,
+      upsert: true,
+    });
+  if (ue) throw ue;
+  return [
+    db.storage.from("ridne-product-images").getPublicUrl(path).data.publicUrl,
+  ];
+}
+async function moderateSeller(
+  id: string,
+  decision: string,
+  reason: string,
+  fields: string[] = [],
+) {
+  if (decision === "reject" && (!reason || reason.length < 8 || !fields.length))
+    throw Error("Вкажіть, яких даних бракує, і конкретне прохання.");
+  fields = fields.filter((f) => Object.hasOwn(reviewFields, f));
+  if (!isUuid(id) || !["approve", "reject"].includes(decision))
+    throw Error("Неправильна дія модерації.");
+  const patch =
+    decision === "approve"
+      ? {
+          verification_status: "verified",
+          verified_at: new Date().toISOString(),
+          rejection_reason: null,
+        }
+      : {
+          verification_status: "rejected",
+          verified_at: null,
+          rejection_reason: reason || "Потрібні уточнення",
+        };
+  const { data: s, error } = await db
+    .from("seller_profiles")
+    .update(patch)
+    .eq("id", id)
+    .eq("verification_status", "pending")
+    .select("id,user_id,verification_status")
+    .maybeSingle();
+  if (error) throw error;
+  if (!s) throw Error("Заявку вже опрацьовано або не знайдено.");
+  if (decision === "approve")
+    await db
+      .from("marketplace_users")
+      .update({ role: "seller" })
+      .eq("id", s.user_id);
+  await db.from("moderation_events").insert({
+    target_type: "seller",
+    seller_id: id,
+    decision: decision === "approve" ? "approved" : "needs_changes",
+    reason: decision === "approve" ? null : reason,
+    requested_fields: fields,
+  });
+  return s;
+}
+async function moderateProduct(
+  id: string,
+  decision: string,
+  reason: string,
+  fields: string[] = [],
+) {
+  if (decision === "reject" && (!reason || reason.length < 8 || !fields.length))
+    throw Error("Вкажіть, яких даних бракує, і конкретне прохання.");
+  fields = fields.filter((f) => Object.hasOwn(reviewFields, f));
+  if (!isUuid(id) || !["approve", "reject"].includes(decision))
+    throw Error("Неправильна дія модерації.");
+  const { data: p, error } = await db
+    .from("products")
+    .select(
+      "*,categories(publication_mode),seller_profiles(verification_status)",
+    )
+    .eq("id", id)
+    .eq("status", "pending")
+    .maybeSingle();
+  if (error) throw error;
+  if (!p) throw Error("Заявку вже опрацьовано або не знайдено.");
+  const s = Array.isArray(p.seller_profiles)
+    ? p.seller_profiles[0]
+    : p.seller_profiles;
+  const c = Array.isArray(p.categories) ? p.categories[0] : p.categories;
+  if (
+    decision === "approve" &&
+    !["free_launch", "paid", "legacy"].includes(p.listing_payment_status)
+  )
+    throw Error("Товар не має активного права на розміщення.");
+  if (
+    decision === "approve" &&
+    (s?.verification_status !== "verified" || c?.publication_mode === "blocked")
+  )
+    throw Error("Спочатку схваліть виробника та перевірте категорію.");
+  const images =
+    decision === "approve" ? await publishWebImage(p) : p.public_image_urls;
+  const patch =
+    decision === "approve"
+      ? {
+          status: "approved",
+          approved_at: new Date().toISOString(),
+          moderation_reason: null,
+          public_image_urls: images,
+        }
+      : {
+          status: "rejected",
+          approved_at: null,
+          moderation_reason: reason || "Потрібні уточнення",
+        };
+  const { data: updated, error: ue } = await db
+    .from("products")
+    .update(patch)
+    .eq("id", id)
+    .eq("status", "pending")
+    .select("id,status")
+    .single();
+  if (ue) throw ue;
+  await db.from("moderation_events").insert({
+    target_type: "product",
+    product_id: id,
+    seller_id: p.seller_id,
+    decision: decision === "approve" ? "approved" : "needs_changes",
+    reason: decision === "approve" ? null : reason,
+    requested_fields: fields,
+  });
+  return updated;
+}
+async function syncPendingNotifications() {
+  const [{ data: sellers }, { data: products }] = await Promise.all([
+    db
+      .from("seller_profiles")
+      .select("id")
+      .eq("verification_status", "pending"),
+    db.from("products").select("id").eq("status", "pending"),
+  ]);
+  const results = [];
+  for (const s of sellers || [])
+    results.push(await notifyModeration("seller", s.id));
+  for (const p of products || [])
+    results.push(await notifyModeration("product", p.id));
+  const { data: registrations } = await db
+    .from("registration_notifications")
+    .select("user_id")
+    .in("status", ["pending", "failed"])
+    .limit(50);
+  for (const r of registrations || []) results.push(await notify(r.user_id));
+  return {
+    processed: results.length,
+    sent: results.filter(
+      (r: any) =>
+        r.moderation_notification === "sent" || r.notification === "sent",
+    ).length,
+    failed: results.filter((r: any) =>
+      ["queued_for_retry", "pending_configuration"].includes(
+        r.moderation_notification || r.notification,
+      ),
+    ).length,
+    results,
+  };
+}
+
+Deno.serve(async (req) => {
+  const origin = req.headers.get("origin") || "";
+  const cors = {
+    "Access-Control-Allow-Origin": allowedOrigins.includes(origin)
+      ? origin
+      : allowedOrigins[0],
+    "Access-Control-Allow-Headers":
+      "authorization,apikey,content-type,x-client-info",
+    "Access-Control-Allow-Methods": "POST,OPTIONS",
+    Vary: "Origin",
+  };
+  const out = (body: unknown, status = 200) =>
+    new Response(JSON.stringify(body), {
+      status,
+      headers: {
+        ...cors,
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+      },
+    });
+  if (req.method === "OPTIONS") return new Response(null, { headers: cors });
+  if (req.method !== "POST") return out({ error: "Method not allowed" }, 405);
+  if (origin && !allowedOrigins.includes(origin))
+    return out({ error: "Origin not allowed" }, 403);
+  if (Number(req.headers.get("content-length") || 0) > 7500000)
+    return out({ error: "Завеликий запит." }, 413);
+  try {
+    const raw = await req.text();
+    if (raw.length > 7500000) return out({ error: "Завеликий запит." }, 413);
+    const body = JSON.parse(raw);
+    const auth = req.headers.get("authorization") || "";
+    let user: any = null;
+    if (auth.startsWith("Bearer ")) {
+      const result = await db.auth.getUser(auth.slice(7));
+      if (!result.error && result.data.user?.email_confirmed_at)
+        user = result.data.user;
+    }
+    if (body.action === "create-request")
+      return out(await createRequest(db, body, user));
+    if (!user)
+      return out({ error: "Підтвердьте пошту й увійдіть знову." }, 401);
+    const isAdmin = user.email?.toLowerCase() === adminEmail;
+    if (
+      [
+        "admin-dashboard",
+        "moderate-seller",
+        "moderate-product",
+        "sync-moderation",
+      ].includes(body.action)
+    ) {
+      if (!isAdmin)
+        return out({ error: "Цей розділ доступний лише власнику RIDNE." }, 403);
+      if (body.action === "admin-dashboard")
+        return out(await ownerDashboard(db));
+      if (
+        body.action === "moderate-seller" ||
+        body.action === "moderate-product"
+      ) {
+        const target = body.action === "moderate-seller" ? "seller" : "product";
+        const id = target === "seller" ? body.seller_id : body.product_id;
+        const fields = Array.isArray(body.fields)
+          ? body.fields.filter((f: string) => Object.hasOwn(reviewFields, f))
+          : [];
+        const result =
+          target === "seller"
+            ? await moderateSeller(
+                id,
+                body.decision,
+                text(body.reason, 2000),
+                fields,
+              )
+            : await moderateProduct(
+                id,
+                body.decision,
+                text(body.reason, 2000),
+                fields,
+              );
+        const delivery =
+          body.decision === "reject"
+            ? await notifyLatestReview(db, telegram, target, id)
+            : null;
+        return out({ result, delivery });
+      }
+      return out(await syncPendingNotifications());
+    }
+    const { data: existing } = await db
+      .from("web_profiles")
+      .select("*")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (existing) {
+      const { data: m } = await db
+        .from("marketplace_users")
+        .select("is_blocked")
+        .eq("id", existing.marketplace_user_id)
+        .single();
+      if (m?.is_blocked)
+        return out(
+          { error: "Профіль призупинено. Зверніться до підтримки." },
+          403,
+        );
+    }
+    if (body.action === "complete-onboarding") {
+      const p = validateProfile(body.profile);
+      const { data, error } = await db.rpc("complete_web_onboarding", {
+        p_user_id: user.id,
+        p_profile: { ...p, verified_email: user.email },
+      });
+      if (error) throw error;
+      let moderation = {};
+      if (p.account_type === "seller") {
+        const { data: seller } = await db
+          .from("seller_profiles")
+          .select("id")
+          .eq("user_id", data.marketplace_user_id)
+          .single();
+        if (seller) moderation = await notifyModeration("seller", seller.id);
+      }
+      return out({ profile: data, ...(await notify(user.id)), ...moderation });
+    }
+    if (body.action === "ensure-profile") {
+      const { data, error } = await db.rpc("ensure_web_profile", {
+        p_user_id: user.id,
+        p_name: text(
+          body.name ||
+            user.user_metadata?.ridne_onboarding?.display_name ||
+            user.user_metadata?.full_name ||
+            user.email?.split("@")[0],
+          100,
+        ),
+        p_email: user.email,
+      });
+      if (error) throw error;
+      return out({ profile: data, ...(await notify(user.id)) });
+    }
+    if (!existing)
+      return out({ error: "Спочатку завершіть створення профілю." }, 409);
+    if (body.action === "activate-seller") {
+      if (!regions.includes(body.profile?.oblast))
+        return out({ error: "Оберіть область." }, 400);
+      const result = await activateSeller(
+        db,
+        user,
+        existing,
+        body.profile || {},
+      );
+      return out({
+        ...result,
+        ...(await notifyModeration("seller", result.seller.id)),
+      });
+    }
+    if (body.action === "review-reply") {
+      const result = await replyToReview(db, existing, body);
+      return out({
+        ...result,
+        ...(await notifyModeration(result.target_type, result.target_id)),
+      });
+    }
+    if (body.action === "update-profile")
+      return out(await updateProfile(db, existing, body.profile || {}));
+    if (
+      ["request-thread", "request-message", "request-status"].includes(
+        body.action,
+      )
+    )
+      return out(await requestAction(db, body, existing));
+    if (body.action === "notify-registration")
+      return out(await notify(user.id));
+    if (body.action === "dashboard") {
+      const { data: seller, error: se } = await db
+        .from("seller_profiles")
+        .select(
+          "id,display_name,verification_status,producer_type,story,fulfillment_options,oblast,locality",
+        )
+        .eq("user_id", existing.marketplace_user_id)
+        .maybeSingle();
+      if (se) throw se;
+      const { data: products, error: pe } = seller
+        ? await db
+            .from("products")
+            .select(
+              "id,title,description,price_uah,unit,available_quantity,status,created_at,public_image_urls,web_image_path,moderation_reason,categories(slug),storage_requirements,fulfillment_options,origin_oblast,origin_locality",
+            )
+            .eq("seller_id", seller.id)
+            .order("created_at", { ascending: false })
+            .limit(100)
+        : { data: [], error: null };
+      if (pe) throw pe;
+      const { data: orders, error: oe } = await db
+        .from("orders")
+        .select("id,status,total,created_at")
+        .eq("buyer_id", existing.marketplace_user_id)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (oe) throw oe;
+      for (const p of products || []) {
+        if (p.web_image_path && !p.public_image_urls?.length) {
+          const { data } = await db.storage
+            .from("ridne-web-products")
+            .createSignedUrl(p.web_image_path, 900);
+          if (data?.signedUrl) p.public_image_urls = [data.signedUrl];
+        }
+        delete p.web_image_path;
+      }
+      const { data: reviews, error: reviewError } = seller
+        ? await db
+            .from("seller_review_requests")
+            .select(
+              "id,product_id,reason,requested_fields,status,created_at,reply",
+            )
+            .eq("seller_id", seller.id)
+            .order("created_at", { ascending: false })
+            .limit(50)
+        : { data: [], error: null };
+      if (reviewError) throw reviewError;
+      return out({
+        reviews,
+        seller,
+        products,
+        orders,
+        requests: await requestsDashboard(db, existing, seller),
+        is_admin: isAdmin,
+      });
+    }
+    if (body.action === "submit-product") {
+      if (
+        typeof body.product_id !== "string" ||
+        !/^[-0-9a-f]{36}$/.test(body.product_id)
+      )
+        return out({ error: "Неправильний товар." }, 400);
+      const { data, error } = await db.rpc("submit_web_product", {
+        p_user_id: user.id,
+        p_product_id: body.product_id,
+      });
+      if (error)
+        return out(
+          {
+            error:
+              "Подання поки недоступне. Перевірте профіль, категорію або зверніться до підтримки.",
+          },
+          409,
+        );
+      return out({
+        product: data,
+        ...(await notifyModeration("product", body.product_id)),
+      });
+    }
+    if (body.action === "save-product") {
+      if (existing.account_type !== "seller")
+        return out({ error: "Товари можуть додавати лише виробники." }, 403);
+      const { data: seller } = await db
+        .from("seller_profiles")
+        .select("id,verification_status")
+        .eq("user_id", existing.marketplace_user_id)
+        .single();
+      if (!seller || seller.verification_status === "suspended")
+        return out({ error: "Профіль виробника недоступний." }, 403);
+      const p = body.product || {};
+      const { count } = await db
+        .from("products")
+        .select("id", { count: "exact", head: true })
+        .eq("seller_id", seller.id)
+        .gte("created_at", new Date(Date.now() - 86400000).toISOString());
+      if ((count || 0) >= 20)
+        return out({ error: "На сьогодні досягнуто ліміт 20 чернеток." }, 429);
+      const { data: cat } = await db
+        .from("categories")
+        .select("id,publication_mode")
+        .eq("slug", p.category_slug)
+        .eq("is_active", true)
+        .single();
+      if (p.id) {
+        if (!isUuid(p.id)) return out({ error: "Неправильний товар." }, 400);
+        const { data: owned } = await db
+          .from("products")
+          .select("id,status,web_image_path")
+          .eq("id", p.id)
+          .eq("seller_id", seller.id)
+          .maybeSingle();
+        if (
+          !owned ||
+          !["draft", "rejected", "approved", "sold_out"].includes(owned.status)
+        )
+          return out({ error: "Товар недоступний для редагування." }, 403);
+        p.existing_image = owned.web_image_path;
+      }
+      const price = Number(p.price_uah),
+        qty = Number(p.available_quantity);
+      if (
+        !cat ||
+        text(p.title, 160).length < 3 ||
+        !Number.isFinite(price) ||
+        price <= 0 ||
+        price > 1000000 ||
+        !Number.isFinite(qty) ||
+        qty <= 0 ||
+        qty > 1000000 ||
+        ![
+          "кг",
+          "г",
+          "л",
+          "мл",
+          "шт",
+          "банка",
+          "упаковка",
+          "пучок",
+          "ящик",
+          "100 г",
+          "500 г",
+          "0,5 л",
+          "лоток",
+          "20 шт",
+        ].includes(p.unit) ||
+        !text(p.storage_requirements, 500)
+      )
+        return out(
+          {
+            error: "Перевірте назву, категорію, ціну, кількість і зберігання.",
+          },
+          400,
+        );
+      for (const k of ["harvest_or_production_date", "best_before"])
+        if (p[k] && !/^\d{4}-\d{2}-\d{2}$/.test(p[k]))
+          return out({ error: "Неправильна дата." }, 400);
+      if (
+        p.best_before &&
+        p.harvest_or_production_date &&
+        p.best_before < p.harvest_or_production_date
+      )
+        return out(
+          { error: "Термін придатності не може передувати даті виготовлення." },
+          400,
+        );
+      let imagePath: string | null = p.id ? p.existing_image || null : null;
+      if (p.image) {
+        const mime = p.image.type;
+        if (
+          !["image/jpeg", "image/png", "image/webp"].includes(mime) ||
+          typeof p.image.data !== "string" ||
+          p.image.data.length > 7000000
+        )
+          return out({ error: "Неправильне фото." }, 400);
+        const bytes = Uint8Array.from(atob(p.image.data), (c) =>
+          c.charCodeAt(0),
+        );
+        if (bytes.length > 5242880)
+          return out({ error: "Фото має бути до 5 МБ." }, 400);
+        const valid =
+          mime === "image/jpeg"
+            ? bytes[0] === 255 && bytes[1] === 216
+            : mime === "image/png"
+              ? bytes[0] === 137 &&
+                bytes[1] === 80 &&
+                bytes[2] === 78 &&
+                bytes[3] === 71
+              : String.fromCharCode(...bytes.slice(0, 4)) === "RIFF" &&
+                String.fromCharCode(...bytes.slice(8, 12)) === "WEBP";
+        if (!valid)
+          return out(
+            { error: "Вміст файлу не відповідає формату зображення." },
+            400,
+          );
+        imagePath =
+          user.id +
+          "/" +
+          crypto.randomUUID() +
+          "." +
+          (mime === "image/jpeg" ? "jpg" : mime.split("/")[1]);
+        const { error } = await db.storage
+          .from("ridne-web-products")
+          .upload(imagePath, bytes, { contentType: mime, upsert: false });
+        if (error) throw error;
+      }
+      const payload = {
+        seller_id: seller.id,
+        category_id: cat.id,
+        title: text(p.title, 160),
+        description: text(p.description, 3000),
+        price_uah: Math.round(price * 100) / 100,
+        unit: p.unit,
+        available_quantity: qty,
+        origin_oblast: regions.includes(p.origin_oblast)
+          ? p.origin_oblast
+          : existing.oblast,
+        origin_locality: text(p.origin_locality, 100) || existing.locality,
+        fulfillment_options: Array.isArray(p.fulfillment_options)
+          ? p.fulfillment_options.filter((x: string) =>
+              ["nova_poshta", "ukrposhta", "pickup"].includes(x),
+            )
+          : [],
+        ingredients: text(p.ingredients, 1000),
+        storage_requirements: text(p.storage_requirements, 500),
+        harvest_or_production_date: p.harvest_or_production_date || null,
+        best_before: p.best_before || null,
+        status: "draft",
+        web_image_path: imagePath,
+      };
+      const write = p.id
+        ? db
+            .from("products")
+            .update({
+              ...payload,
+              moderation_reason: null,
+              ...(p.image ? { public_image_urls: [] } : {}),
+            })
+            .eq("id", p.id)
+            .eq("seller_id", seller.id)
+            .in("status", ["draft", "rejected", "approved", "sold_out"])
+        : db.from("products").insert(payload);
+      const { data: product, error } = await write.select("id,status").single();
+      if (error) {
+        if (p.image && imagePath)
+          await db.storage.from("ridne-web-products").remove([imagePath]);
+        throw error;
+      }
+      return out({ product });
+    }
+    return out({ error: "Невідома дія." }, 400);
+  } catch (err) {
+    console.error(
+      "ridne-web request failed",
+      err instanceof Error ? err.message : "request_failed",
+    );
+    return out(
+      {
+        error: "Не вдалося зберегти дані. Перевірте поля та спробуйте ще раз.",
+      },
+      400,
+    );
+  }
+});

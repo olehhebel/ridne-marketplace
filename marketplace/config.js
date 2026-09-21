@@ -4,7 +4,7 @@ addEventListener('DOMContentLoaded',()=>{
   if(document.getElementById('ridne-showcase-script'))return;
   const script=document.createElement('script');
   script.id='ridne-showcase-script';
-  script.src='/marketplace/showcase.js?v=20260915-sprite3';
+  script.src='/marketplace/showcase.js?v=20260921-v2';
   script.async=false;
   document.head.appendChild(script);
 },{once:true});

@@ -123,7 +123,8 @@
           <p class="category-label">${meta.emoji} ${esc(meta.name)}</p>
           <h3>${esc(item.title)}</h3>
           <span class="price">${Number(item.price).toLocaleString('uk-UA')} ₴ <small>/ ${esc(item.unit)}</small></span>
-          <small class="demo-price-source">Орієнтир: ${esc(item.source)}</small>
+          <small class="demo-price-source">Приклад · не продається</small>
+          <button type="button" class="demo-cta" data-sell-category="${esc(item.cat)}" data-sell-title="${esc(item.title)}" data-sell-unit="${esc(item.unit)}">Заповнити цей слот <span aria-hidden="true">→</span></button>
           ${item.regulated ? '<small class="demo-risk">Після перевірки виробника</small>' : ''}
         </div>
       </article>`;
@@ -135,7 +136,9 @@
 
     mount.classList.remove('demo-groups');
     const selected = document.querySelector('#filter-category')?.value || '';
-    mount.innerHTML = EXACT_ITEMS.filter((item) => !selected || item.cat === selected).map(card).join('');
+    const query=(document.querySelector('#search')?.value||'').trim().toLocaleLowerCase('uk');
+    if(new URLSearchParams(location.search).has('favorites')){document.querySelector('#demo-catalog').hidden=true;return;}
+    mount.innerHTML = EXACT_ITEMS.filter((item) => (!selected || item.cat === selected) && (!query || (item.title+' '+(categoryMeta.get(item.cat)?.name||'')).toLocaleLowerCase('uk').includes(query))).map(card).join('');
 
     mount.querySelectorAll('img').forEach((img) => {
       img.addEventListener('error', () => {
@@ -145,7 +148,7 @@
 
     const note = document.querySelector('#demo-catalog .demo-note');
     if (note) {
-      note.innerHTML = '<strong>25 точних демонстраційних позицій.</strong> Кожна картка прив’язана до власної клітинки спрайта. Це місця для майбутніх товарів виробників.';
+      note.innerHTML = '<strong>Місце для ваших продуктів.</strong> Це приклади, а не товари у продажу. Заповніть слот — додайте свій продукт.';
     }
 
     const summary = document.querySelector('#demo-catalog > summary');
@@ -189,6 +192,7 @@
     document.head.appendChild(style);
   }
 
+  document.querySelector('.header-search')?.addEventListener('submit',()=>setTimeout(renderShowcase,0));
   injectStyles();
   exposeAllCategories();
   renderShowcase();

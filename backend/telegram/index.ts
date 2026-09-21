@@ -122,7 +122,7 @@ async function notifyAdmin(text: string, replyMarkup?: unknown) {
   const c = await cfg();
   const destination = c.moderation_chat_id || c.admin_telegram_id;
   if (!destination) return;
-  return send(destination, text, replyMarkup ? { reply_markup: replyMarkup } : {});
+  const markup:any=replyMarkup||{inline_keyboard:[]};if(markup.inline_keyboard)markup.inline_keyboard.push([{text:"Відкрити адмін-панель",url:"https://ridne.store/admin/moderation/"}]);return send(destination, text, {reply_markup:markup});
 }
 
 async function sendPendingModeration(targetType: "seller" | "product", targetId: string) {
@@ -449,7 +449,7 @@ async function createOrder(chatId: number, user: any, productId: string) {
   const { data: p } = await db.from("public_product_catalog").select("*").eq("id", productId).maybeSingle();
   if (!p) return send(chatId, "Цей товар уже недоступний.", { reply_markup: menu() });
   const subtotal = Number(p.price_uah);
-  const commissionBps = 700;
+  const commissionBps = 0;
   const fee = Math.round(subtotal * commissionBps) / 10000;
   const { data: order, error } = await db.from("orders").insert({
     buyer_id: user.id,
@@ -475,6 +475,7 @@ async function createOrder(chatId: number, user: any, productId: string) {
 async function adminSellerDecision(fromId: number, chatId: number, action: string, sellerId: string) {
   const c = await cfg();
   if (String(fromId) !== String(c.admin_telegram_id)) return send(chatId, "Недостатньо прав.");
+  if(action!=="approve")return send(chatId,"Відкрийте заявку в адмін-панелі й натисніть «Запросити дані»: оберіть конкретні поля та напишіть прохання.",{reply_markup:{inline_keyboard:[[{text:"Відкрити адмін-панель",url:"https://ridne.store/admin/moderation/"}]]}});
   const patch = action === "approve"
     ? { verification_status: "verified", verified_at: new Date().toISOString(), rejection_reason: null }
     : { verification_status: "rejected", rejection_reason: "Потрібні уточнення" };
@@ -489,6 +490,7 @@ async function adminSellerDecision(fromId: number, chatId: number, action: strin
 async function adminProductDecision(fromId: number, chatId: number, action: string, productId: string) {
   const c = await cfg();
   if (String(fromId) !== String(c.admin_telegram_id)) return send(chatId, "Недостатньо прав.");
+  if(action!=="approve")return send(chatId,"Відкрийте заявку в адмін-панелі й натисніть «Запросити дані»: оберіть конкретні поля та напишіть прохання.",{reply_markup:{inline_keyboard:[[{text:"Відкрити адмін-панель",url:"https://ridne.store/admin/moderation/"}]]}});
   const { data: p } = await db.from("products").select("*,categories(slug,name_uk,publication_mode),seller_profiles(user_id,display_name,verification_status)").eq("id", productId).single();
   if (!p) return;
   if (action === "approve" && !["free_launch", "paid", "legacy"].includes(p.listing_payment_status)) return send(chatId, "Не можна схвалити: заявка не має активного права на розміщення.");
@@ -541,7 +543,7 @@ async function handleText(chatId: number, user: any, message: any) {
     const payload = text.split(/\s+/, 2)[1] || "";
     if (payload.startsWith("owner_")) return claimOwner(chatId, user, payload.slice(6));
     await setState(user.id, "idle", {});
-    if (payload === "sell" || payload === "ridne_store") return startSeller(chatId, user);
+    if (payload === "sell") return startSeller(chatId, user);
     return showMenu(chatId, user);
   }
   if (text === "/menu") { await setState(user.id, "idle", {}); return showMenu(chatId, user); }
@@ -551,6 +553,15 @@ async function handleText(chatId: number, user: any, message: any) {
 
   const state = user.bot_state || "idle";
   const ctx: any = user.bot_context || {};
+  if(state==='review_reply'){
+    if(text.length<3)return send(chatId,'Напишіть конкретну відповідь на запит адміністратора.');
+    const {data:r}=await db.from('seller_review_requests').select('*,seller_profiles(user_id)').eq('id',ctx.review_id).eq('status','needs_data').maybeSingle();
+    if(!r||r.seller_profiles?.user_id!==user.id){await setState(user.id,'idle',{});return send(chatId,'Запит уже опрацьовано.');}
+    if((r.requested_fields||[]).some((f:string)=>['photo','document'].includes(f))){await db.from('seller_review_requests').update({reply:text.slice(0,2000),replied_at:new Date().toISOString()}).eq('id',r.id);}else{const {error}=await db.rpc('reply_telegram_review',{p_marketplace_user_id:user.id,p_review_id:r.id,p_reply:text.slice(0,2000),p_seller_patch:{},p_product_patch:{},p_file_path:null,p_file_bucket:null});if(error)throw error;}
+    await notifyAdmin(`<b>Виробник відповів на запит даних</b>\n${telegramContact(user)}\n${esc(text.slice(0,2000))}\n\nhttps://ridne.store/admin/moderation/`);
+    await setState(user.id,'idle',{});
+    return send(chatId,'Відповідь передано адміністратору. Якщо потрібен файл, надішліть його через /support.',{reply_markup:menu()});
+  }
   if (state === "support_message") {
     if (!text) return send(chatId, "Будь ласка, надішліть текстове повідомлення.");
     await db.from("support_requests").insert({ user_id: user.id, message: text });
@@ -570,6 +581,12 @@ async function handleText(chatId: number, user: any, message: any) {
 async function handleCallback(chatId: number, from: any, user: any, callback: any) {
   const data = String(callback.data || "");
   await tg("answerCallbackQuery", { callback_query_id: callback.id });
+  if(data.startsWith('review:')){
+    const id=data.slice(7);const {data:r}=await db.from('seller_review_requests').select('*,seller_profiles(user_id)').eq('id',id).eq('status','needs_data').maybeSingle();
+    if(!r||r.seller_profiles?.user_id!==user.id)return send(chatId,'Запит уже опрацьовано або недоступний.');
+    await setState(user.id,'review_reply',{review_id:id});
+    return send(chatId,`<b>Що потрібно доповнити</b>\n${esc(r.reason)}\n\nНадішліть відповідь одним текстовим повідомленням. Вона збережеться разом із заявкою для адміністратора. Якщо потрібен файл, скористайтеся підтримкою /support.`);
+  }
   if (data === "menu:home") return showMenu(chatId, user);
   if (data === "menu:buy") return browse(chatId);
   if (data === "menu:sell") return startSeller(chatId, user);

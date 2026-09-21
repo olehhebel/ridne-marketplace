@@ -110,7 +110,7 @@ begin
  if v_count is null or v_limit is null or v_count>=v_limit then raise exception 'Free launch limit reached'; end if;
  insert into public.web_listing_submissions(product_id,submitted_by) values(p.id,p_user_id) on conflict(product_id) do nothing;
  if found then update public.marketplace_settings set value=to_jsonb(v_count+1) where key='launch_free_listing_used'; end if;
- update public.products set status='pending',submitted_at=now() where id=p.id;
+ update public.products set status='pending',listing_payment_status='free_launch',submitted_at=now() where id=p.id;
  insert into public.moderation_events(target_type,product_id,seller_id,decision,reason) values('product',p.id,v_seller,'submitted','Заявка з вебкабінету. Безкоштовний запуск; перевірка виробника та категорії обов’язкові.');
  return jsonb_build_object('id',p.id,'status','pending');
 end $$;
