@@ -165,6 +165,7 @@ function renderUsers() {
     ...(currentData.users || []).map((w) => ({
       ...w,
       source: "Сайт",
+      is_blocked: w.marketplace_users?.is_blocked,
       seller: currentData.all_sellers.find(
         (s) => s.user_id === w.marketplace_user_id,
       ),
@@ -198,7 +199,7 @@ function renderUsers() {
               ],
               ["Категорії", u.category_slugs],
             ],
-          )}${u.seller?.rejection_reason ? `<p>Запитано: ${esc(u.seller.rejection_reason)}</p>` : ""}</article>`,
+          )}${u.seller?.rejection_reason ? `<p>Запитано: ${esc(u.seller.rejection_reason)}</p>` : ""}${u.user_id ? `<div class="moderation-actions"><button class="btn secondary" data-edit-user="${esc(u.user_id)}">Редагувати</button><button class="btn secondary" data-toggle-user="${esc(u.user_id)}">${u.is_blocked ? "Відновити" : "Призупинити"}</button><button class="btn tertiary" data-delete-user="${esc(u.user_id)}">Видалити акаунт</button></div>` : ""}</article>`,
       )
       .join("") || '<p class="queue-empty">Нікого не знайдено.</p>';
 }
@@ -277,26 +278,18 @@ $("#admin-login-form").onsubmit = async (e) => {
   b.disabled = true;
   try {
     if (!client) throw Error("Сервіс входу недоступний.");
-    const { error } = await client.auth.signInWithOtp({
-      email: ADMIN_EMAIL,
-      options: {
-        emailRedirectTo: "https://ridne.store/admin/moderation/",
-        shouldCreateUser: false,
-      },
-    });
-    if (error)
-      throw Error(
-        error.status === 429
-          ? "Зачекайте 60 секунд перед повторним листом."
-          : "Не вдалося надіслати лист. Спробуйте ще раз.",
-      );
-    $("#admin-login-status").textContent =
-      "Посилання надіслано на вашу пошту. Відкрийте лист у цьому браузері — потрапите одразу в адмін-панель.";
-    setTimeout(() => (b.disabled = false), 60000);
+    const password = new FormData(e.target).get('password');
+    const { error } = await client.auth.signInWithPassword({ email: ADMIN_EMAIL, password: String(password) });
+    if (error) throw Error('Невірний пароль або електронну пошту ще не підтверджено.');
+    await load();
   } catch (error) {
     $("#admin-login-status").textContent = error.message;
     b.disabled = false;
   }
+};
+$("#admin-reset").onclick = async () => {
+  const { error } = await client.auth.resetPasswordForEmail(ADMIN_EMAIL, { redirectTo: 'https://ridne.store/account/' });
+  $("#admin-login-status").textContent = error ? 'Не вдалося надіслати лист для встановлення пароля.' : 'Якщо пошта зареєстрована, надіслано лист для встановлення пароля.';
 };
 $("#admin-logout").onclick = async () => {
   await client.auth.signOut();
@@ -371,6 +364,22 @@ function requestData(type, id) {
   };
 }
 document.addEventListener("click", async (e) => {
+  const action = e.target.closest('[data-edit-user],[data-toggle-user],[data-delete-user]');
+  if(action){
+    const id=action.dataset.editUser||action.dataset.toggleUser||action.dataset.deleteUser;
+    const target=currentData.users.find(u=>u.user_id===id);
+    if(!target)return;
+    let name=target.display_name;
+    let blocked=Boolean(target.is_blocked);
+    let endpoint='admin-update-user';
+    if(action.dataset.editUser){name=prompt('Ім’я користувача',name);if(name===null)return;}
+    if(action.dataset.toggleUser){blocked=!blocked;if(!confirm(blocked?'Призупинити доступ цього акаунта?':'Відновити доступ?'))return;}
+    if(action.dataset.deleteUser){if(!confirm('Видалити доступ до акаунта '+target.email+'? Історія замовлень зберігається.'))return;endpoint='admin-delete-user';}
+    action.disabled=true;
+    try{await api(endpoint,{user_id:id,display_name:name,is_blocked:blocked});toast('Зміни збережено.');await load();}
+    catch(error){toast(error.message);action.disabled=false;}
+    return;
+  }
   const b = e.target.closest("[data-decision]");
   if (!b) return;
   const { type, id, decision } = b.dataset;

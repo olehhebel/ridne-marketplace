@@ -125,6 +125,14 @@ async function profileForSession() {
     .maybeSingle();
   if (error) throw Error("Не вдалося завантажити профіль. Спробуйте ще раз.");
   if (data) return data;
+  const onboarding = session.user.user_metadata?.ridne_onboarding || sessionRead('ridne-onboarding');
+  if (onboarding?.account_type && onboarding?.consent) {
+    const result = await api('complete-onboarding', { profile: onboarding });
+    sessionStorage.removeItem('ridne-onboarding');
+    return result.profile;
+  }
+  location.href = '/signup/';
+  return null;
   const meta = session.user.user_metadata || {};
   const name =
     meta.ridne_onboarding?.display_name ||
@@ -138,28 +146,18 @@ async function profileForSession() {
 async function openAuth(seller = false) {
   const dialog = flowModal(
     seller ? "Увійдіть, щоб додати товар" : "Ваш акаунт РІДНЕ",
-    `<p>Одне посилання на пошту — без пароля. Один акаунт для покупок і продажів.</p><div id="social-auth"></div><form id="quick-auth">${field("Ваше ім’я", "name", "", "text", 'required minlength="2" maxlength="100" autocomplete="name"')}${field("Електронна пошта", "email", "", "email", 'required maxlength="254" autocomplete="email"')}<label class="checkline"><input type="checkbox" name="consent" required><span>Погоджуюся з <a href="/terms/" target="_blank" rel="noopener">правилами</a> та <a href="/privacy/" target="_blank" rel="noopener">обробкою даних</a>.</span></label><p role="alert" hidden class="error"></p><p id="auth-status" role="status"></p><button class="btn primary" type="submit">Отримати посилання</button></form><p class="hint">Маєте акаунт? Використайте ту саму пошту. Для перегляду й запитів на купівлю вхід не потрібен.</p>`,
+    `<p>Увійдіть до свого акаунта або зареєструйтеся один раз.</p><div id="social-auth"></div><form id="quick-auth">${field("Електронна пошта", "email", "", "email", 'required autocomplete="email"')}${field("Пароль", "password", "", "password", 'required minlength="8" autocomplete="current-password"')}<p role="alert" hidden class="error"></p><button class="btn primary" type="submit">Увійти</button></form><p><a href="/signup/?role=${seller ? 'seller' : 'buyer'}">Створити акаунт</a> · <a href="/account/">Забули пароль?</a></p>`,
   );
   const form = dialog.querySelector("form");
   form.onsubmit = async (e) => {
     e.preventDefault();
-    if (Date.now() < authCooldown) {
-      formError(form, Error("Зачекайте хвилину перед повторним листом."));
-      return;
-    }
     const button = form.querySelector("[type=submit]");
     button.disabled = true;
     try {
       const fd = new FormData(form);
-      await sendMagic(String(fd.get("email")).trim(), {
-        display_name: String(fd.get("name")).trim(),
-        consent: true,
-      });
-      authCooldown = Date.now() + 60000;
-      $("#auth-status").textContent =
-        "Лист надіслано. Відкрийте посилання в цьому браузері — ми повернемо вас до вибраного слота.";
-      button.textContent = "Надіслати ще раз";
-      setTimeout(() => (button.disabled = false), 60000);
+      const { error } = await client.auth.signInWithPassword({ email: String(fd.get('email')).trim(), password: String(fd.get('password')) });
+      if (error) throw Error('Перевірте пошту й пароль або підтвердьте електронну адресу.');
+      location.href = '/account/';
     } catch (error) {
       formError(form, error);
       button.disabled = false;
@@ -180,10 +178,6 @@ async function openAuth(seller = false) {
       button.textContent =
         "Продовжити з " + (provider === "google" ? "Google" : "Apple");
       button.onclick = async () => {
-        if (!form.elements.consent.checked) {
-          formError(form, Error("Погодьтеся з правилами та обробкою даних."));
-          return;
-        }
         const { error } = await client.auth.signInWithOAuth({
           provider,
           options: { redirectTo: "https://ridne.store/account/" },
@@ -712,7 +706,20 @@ if ($("#products")) {
   );
 }
 if ($("#onboard")) setupOnboarding();
-if ($("#account-content")) setupAccount();
+if ($("#account-content")) {
+  const recovery = new URLSearchParams(location.hash.slice(1)).get('type') === 'recovery';
+  if (recovery) {
+    const root = $("#account-content");
+    root.innerHTML = '<div class="onboarding"><h1>Новий пароль</h1><form id="recovery-form"><label class="field"><span>Пароль від 8 символів</span><input type="password" name="password" minlength="8" autocomplete="new-password" required></label><p role="alert" id="recovery-status"></p><button class="btn primary">Зберегти пароль</button></form></div>';
+    $('#recovery-form').onsubmit = async e => {
+      e.preventDefault();
+      const password = new FormData(e.target).get('password');
+      const { error } = await client.auth.updateUser({ password: String(password) });
+      if (error) $('#recovery-status').textContent = 'Не вдалося змінити пароль. Відкрийте лист ще раз.';
+      else location.replace('/account/');
+    };
+  } else setupAccount();
+}
 function renderReviewRequests(data) {
   const reviews = (data.reviews || []).filter((r) => r.status === "needs_data");
   if (!reviews.length) return;

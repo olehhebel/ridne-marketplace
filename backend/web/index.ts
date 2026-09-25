@@ -499,12 +499,47 @@ Deno.serve(async (req) => {
         "moderate-seller",
         "moderate-product",
         "sync-moderation",
+        "admin-update-user",
+        "admin-delete-user",
       ].includes(body.action)
     ) {
       if (!isAdmin)
         return out({ error: "Цей розділ доступний лише власнику RIDNE." }, 403);
       if (body.action === "admin-dashboard")
         return out(await ownerDashboard(db));
+      if (body.action === "admin-update-user" || body.action === "admin-delete-user") {
+        if (!isUuid(body.user_id) || body.user_id === user.id)
+          return out({ error: "Неправильний користувач." }, 400);
+        const { data: target, error: targetError } = await db.from("web_profiles")
+          .select("user_id,marketplace_user_id,account_type")
+          .eq("user_id", body.user_id).maybeSingle();
+        if (targetError) throw targetError;
+        if (!target) return out({ error: "Користувача не знайдено." }, 404);
+        if (body.action === "admin-update-user") {
+          const name = text(body.display_name, 100);
+          if (name.length < 2) return out({ error: "Ім’я закоротке." }, 400);
+          const { error } = await db.from("web_profiles").update({ display_name: name })
+            .eq("user_id", target.user_id);
+          if (error) throw error;
+          if (target.account_type === "seller") {
+            const { error: sellerError } = await db.from("seller_profiles")
+              .update({ display_name: name }).eq("user_id", target.marketplace_user_id);
+            if (sellerError) throw sellerError;
+          }
+          const { error: blockError } = await db.from("marketplace_users")
+            .update({ is_blocked: body.is_blocked === true })
+            .eq("id", target.marketplace_user_id);
+          if (blockError) throw blockError;
+          return out({ ok: true });
+        }
+        // Retain historical orders; Supabase soft deletion preserves foreign keys.
+        const { error: blockError } = await db.from("marketplace_users")
+          .update({ is_blocked: true }).eq("id", target.marketplace_user_id);
+        if (blockError) throw blockError;
+        const { error: deleteError } = await db.auth.admin.deleteUser(target.user_id, true);
+        if (deleteError) throw deleteError;
+        return out({ ok: true });
+      }
       if (
         body.action === "moderate-seller" ||
         body.action === "moderate-product"
@@ -619,6 +654,29 @@ Deno.serve(async (req) => {
       return out(await requestAction(db, body, existing));
     if (body.action === "notify-registration")
       return out(await notify(user.id));
+    if (body.action === "delete-product") {
+      if (!isUuid(body.product_id)) return out({ error: "Неправильний товар." }, 400);
+      const { data: seller } = await db.from("seller_profiles").select("id")
+        .eq("user_id", existing.marketplace_user_id).maybeSingle();
+      if (!seller) return out({ error: "Товар недоступний." }, 403);
+      const { data: product } = await db.from("products").select("id,web_image_path")
+        .eq("id", body.product_id).eq("seller_id", seller.id).maybeSingle();
+      if (!product) return out({ error: "Товар не знайдено." }, 404);
+      const { count } = await db.from("order_items").select("id", { count: "exact", head: true })
+        .eq("product_id", product.id);
+      if (count) {
+        const { error } = await db.from("products").update({ status: "archived" })
+          .eq("id", product.id).eq("seller_id", seller.id);
+        if (error) throw error;
+        return out({ archived: true });
+      }
+      const { error } = await db.from("products").delete().eq("id", product.id)
+        .eq("seller_id", seller.id);
+      if (error) throw error;
+      if (product.web_image_path) await db.storage.from("ridne-web-products")
+        .remove([product.web_image_path]);
+      return out({ deleted: true });
+    }
     if (body.action === "dashboard") {
       const { data: seller, error: se } = await db
         .from("seller_profiles")

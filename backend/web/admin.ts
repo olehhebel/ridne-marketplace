@@ -18,7 +18,7 @@ export async function ownerDashboard(db: any) {
     db
       .from("web_profiles")
       .select(
-        "user_id,marketplace_user_id,display_name,email,account_type,producer_type,category_slugs,oblast,locality,created_at",
+        "user_id,marketplace_user_id,display_name,email,account_type,producer_type,category_slugs,oblast,locality,created_at,marketplace_users(is_blocked)",
       )
       .order("created_at", { ascending: false })
       .limit(200),

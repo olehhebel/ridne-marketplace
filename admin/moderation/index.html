@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="/admin/moderation/moderation.css?v=20260921-admin3">
   <script defer src="/vendor/supabase.js"></script>
   <script defer src="/marketplace/config.js"></script>
-  <script defer src="/admin/moderation/moderation.js?v=20260921-admin3"></script>
+  <script defer src="/admin/moderation/moderation.js?v=20260925-auth"></script>
 </head>
 <body class="moderation-page">
   <a class="skip" href="#main">До черги модерації</a>
@@ -29,7 +29,7 @@
       <p>Увійдіть через вашу офіційну пошту. Заявки та контакти доступні лише власнику РІДНЕ.</p>
       <form id="admin-login-form">
         <label class="field"><span>Електронна пошта адміністратора</span><input type="email" name="email" value="doctorgebel@gmail.com" readonly autocomplete="email"></label>
-        <p class="admin-login-status" id="admin-login-status" role="status"></p>
+        <label class="field"><span>Пароль</span><input type="password" name="password" required autocomplete="current-password"></label><p class="admin-login-status" id="admin-login-status" role="status"></p><button class="btn tertiary" type="button" id="admin-reset">Створити або відновити пароль</button>
         <button class="btn primary" type="submit">Отримати посилання для входу</button>
       </form>
     </section>
