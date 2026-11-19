@@ -294,3 +294,11 @@
   }
 }
 .review-answer{background:#edf4e6;padding:16px;border-radius:14px;margin:14px 0;white-space:pre-wrap;overflow-wrap:anywhere}
+
+.auth-choice{display:grid;gap:.75rem}
+.auth-choice p{margin:.25rem 0 .6rem}
+.auth-choice [role=status]:empty,.auth-existing[hidden]{display:none}
+.auth-provider{width:100%;min-height:48px;border:1px solid #747775;border-radius:.65rem;background:#fff;color:#1f1f1f;cursor:pointer;font:600 1rem/1.3 system-ui,sans-serif}
+.auth-provider.apple{background:#111;color:#fff;border-color:#111}
+.auth-provider:disabled{opacity:.55;cursor:default}
+.auth-choice small{margin-top:.5rem}

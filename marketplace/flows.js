@@ -126,13 +126,11 @@ async function profileForSession() {
   if (error) throw Error("Не вдалося завантажити профіль. Спробуйте ще раз.");
   if (data) return data;
   const onboarding = session.user.user_metadata?.ridne_onboarding || sessionRead('ridne-onboarding');
-  if (onboarding?.account_type && onboarding?.consent) {
+  if (onboarding?.account_type && onboarding?.consent && onboarding.email?.toLowerCase() === session.user.email?.toLowerCase()) {
     const result = await api('complete-onboarding', { profile: onboarding });
     sessionStorage.removeItem('ridne-onboarding');
     return result.profile;
   }
-  location.href = '/signup/';
-  return null;
   const meta = session.user.user_metadata || {};
   const name =
     meta.ridne_onboarding?.display_name ||
@@ -145,49 +143,45 @@ async function profileForSession() {
 }
 async function openAuth(seller = false) {
   const dialog = flowModal(
-    seller ? "Увійдіть, щоб додати товар" : "Ваш акаунт РІДНЕ",
-    `<p>Увійдіть до свого акаунта або зареєструйтеся один раз.</p><div id="social-auth"></div><form id="quick-auth">${field("Електронна пошта", "email", "", "email", 'required autocomplete="email"')}${field("Пароль", "password", "", "password", 'required minlength="8" autocomplete="current-password"')}<p role="alert" hidden class="error"></p><button class="btn primary" type="submit">Увійти</button></form><p><a href="/signup/?role=${seller ? 'seller' : 'buyer'}">Створити акаунт</a> · <a href="/account/">Забули пароль?</a></p>`,
+    seller ? "Увійдіть до Рідного" : "Ваш акаунт Рідного",
+    `<div class="auth-choice"><p>Оберіть акаунт для входу або реєстрації.</p>
+      <button type="button" class="auth-provider" data-provider="google" disabled>Продовжити з Google</button>
+      <button type="button" class="auth-provider apple" data-provider="apple" disabled>Продовжити з Apple</button>
+      <p class="hint" role="status">Перевіряємо доступні способи входу…</p>
+      <a class="auth-existing" href="/account/" hidden>Вхід за паролем</a>
+      <small><a href="/terms/">Правила Рідного</a> · <a href="/privacy/">Приватність</a></small></div>`
   );
-  const form = dialog.querySelector("form");
-  form.onsubmit = async (e) => {
-    e.preventDefault();
-    const button = form.querySelector("[type=submit]");
-    button.disabled = true;
-    try {
-      const fd = new FormData(form);
-      const { error } = await client.auth.signInWithPassword({ email: String(fd.get('email')).trim(), password: String(fd.get('password')) });
-      if (error) throw Error('Перевірте пошту й пароль або підтвердьте електронну адресу.');
-      location.href = '/account/';
-    } catch (error) {
-      formError(form, error);
-      button.disabled = false;
-    }
-  };
+  const choice = dialog.querySelector(".auth-choice");
+  const status = choice.querySelector('[role="status"]');
+  const buttons = [...choice.querySelectorAll("[data-provider]")];
   try {
-    const response = await fetch(cfg.url + "/auth/v1/settings", {
-      headers: { apikey: cfg.key },
-    });
-    if (!response.ok) return;
+    const response = await fetch(cfg.url + "/auth/v1/settings", {headers:{apikey:cfg.key}});
+    if (!response.ok) throw Error();
     const settings = await response.json();
-    const target = dialog.querySelector("#social-auth");
-    if (!target || !dialog.open) return;
-    for (const provider of ["google", "apple"]) {
-      if (!settings.external?.[provider]) continue;
-      const button = document.createElement("button");
-      button.className = "btn secondary";
-      button.textContent =
-        "Продовжити з " + (provider === "google" ? "Google" : "Apple");
+    for (const button of buttons) {
+      const provider = button.dataset.provider;
+      button.disabled = !settings.external?.[provider];
       button.onclick = async () => {
-        const { error } = await client.auth.signInWithOAuth({
-          provider,
-          options: { redirectTo: "https://ridne.store/account/" },
-        });
-        if (error) formError(form, error);
+        for (const item of buttons) item.disabled = true;
+        status.textContent = "Переходимо до входу…";
+        try {
+          const {error} = await client.auth.signInWithOAuth({
+            provider, options:{redirectTo:new URL("/account/", location.origin).href}
+          });
+          if (error) throw error;
+        } catch {
+          status.textContent = "Не вдалося почати вхід. Спробуйте ще раз.";
+          for (const item of buttons) item.disabled = !settings.external?.[item.dataset.provider];
+        }
       };
-      target.append(button);
     }
+    const unavailable = buttons.filter(button => button.disabled);
+    status.textContent = unavailable.length === 2 ? "Вхід через Google та Apple поки недоступний."
+      : unavailable.length ? "Цей спосіб входу поки недоступний: " + (unavailable[0].dataset.provider === "apple" ? "Apple." : "Google.") : "";
+    choice.querySelector(".auth-existing").hidden = unavailable.length === 0;
   } catch {
-    /* Email sign-in remains available. */
+    status.textContent = "Не вдалося завантажити способи входу. Відкрийте форму ще раз.";
+    choice.querySelector(".auth-existing").hidden = false;
   }
 }
 async function beginSell(seed = {}) {
@@ -316,7 +310,7 @@ setupAccount = async function () {
     const current = (await client.auth.getSession()).data.session;
     if (
       current?.user?.email?.toLowerCase() === "doctorgebel@gmail.com" &&
-      params.get("mode") !== "personal"
+      params.get("mode") !== "personal" && !sessionRead(pendingKey)
     ) {
       location.replace("/admin/moderation/");
       return;
