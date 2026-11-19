@@ -29,9 +29,9 @@
   <link rel="stylesheet" href="/marketplace/market.css?v=20260915-sprite2">
   <script defer src="/vendor/supabase.js"></script>
   <script defer src="/marketplace/config.js"></script>
-  <script defer src="/marketplace/market.js?v=20260925-auth"></script>
+  <script defer src="/marketplace/market.js?v=20261119-makers"></script>
   <script defer src="/telegram-config.js"></script>
-<link rel="stylesheet" href="/marketplace/flows.css?v=20260921-v2"><script defer src="/marketplace/flows.js?v=20260925-auth"></script></head>
+<link rel="stylesheet" href="/marketplace/flows.css?v=20260921-v2"><script defer src="/marketplace/flows.js?v=20260925-auth"></script><link rel="stylesheet" href="/marketplace/makers.css"></head>
 <body>
   <a class="skip" href="#catalog">До товарів</a>
   <header class="header">
@@ -67,8 +67,24 @@
           <button class="btn tertiary clear-filters" id="clear-filters">Скинути</button>
         </div>
       </details>
+      <section id="makers" class="makers" aria-labelledby="makers-heading">
+        <header><h2 id="makers-heading">Наші виробники</h2>
+          <button class="maker-motion" type="button" hidden aria-pressed="false">Зупинити стрічку</button></header>
+        <div class="maker-ribbon" aria-hidden="true"><div class="maker-track"><span>GALEKS-AGRO ✳ Костів · Жива Органіка ✳ </span><span>GALEKS-AGRO ✳ Костів · Жива Органіка ✳ </span></div></div>
+        <div class="maker-grid">
+          <article class="maker-card" data-region="Житомирська" data-categories="dry-goods honey nuts"><img src="/assets/spelt.webp" alt="Ілюстрація спельти й борошна жорнового помелу" width="600" height="600">
+            <div><p>Стриєва · Житомирська область</p><h3>GALEKS-AGRO</h3>
+            <p>Вирощують спельту, жито й гречку. Із власного зерна роблять крупи, пластівці та борошно жорнового помелу.</p>
+            <a href="https://galeks-agro.com/production/">Продукція господарства ↗</a><a href="mailto:galex.agro@gmail.com">galex.agro@gmail.com</a></div></article>
+          <article class="maker-card" data-region="Львівська" data-categories="dry-goods vegetables"><img src="/assets/amaranth.webp" alt="Ілюстрація амаранту, вівса й гречаних пластівців" width="600" height="600">
+            <div><p>Поляни · Львівська область</p><h3>Костів · Жива Органіка</h3>
+            <p>Богдан Костів із родиною вирощує зерно. У крамниці господарства є амарант для пророщування, голозерний овес на кашу та гречані пластівці.</p>
+            <a href="https://organic-kostiv.in.ua/product/amarant-organichnyj-dlya-proroshhuvannya-pr/">Амарант для пророщування ↗</a><a href="https://organic-kostiv.in.ua/">Уся продукція Костів ↗</a><a href="mailto:kostiv_z@ukr.net">kostiv_z@ukr.net</a></div></article>
+        </div>
+      </section>
       <div id="catalog-status" class="catalog-status" role="status">Завантажуємо товари…</div>
       <div id="products" class="products"></div>
+      <h2 class="slot-heading" id="slot-heading">Заповніть свій слот</h2>
       <details id="demo-catalog" class="demo-catalog" open>
         <summary>Ідеї для вашого кошика <span aria-hidden="true">⌄</span></summary>
         <p class="catalog-status demo-note">25 прикладів майбутньої вітрини RIDNE. Оберіть свій формат і додайте товар — ми вже притримали для нього місце.</p>

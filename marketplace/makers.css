@@ -1,0 +1,21 @@
+.makers {margin:1.4rem 0 2rem;color:#143e2a}
+.makers[hidden],.slot-heading[hidden],.maker-motion[hidden]{display:none}
+.makers header{display:flex;align-items:center;justify-content:space-between;gap:1rem}
+.makers h2,.slot-heading{font-size:clamp(2rem,4vw,3.8rem);line-height:1.06;letter-spacing:-.045em;margin:.5em 0}
+.maker-motion{font:inherit;font-size:.85rem;color:inherit;background:white;border:1px solid #bed0c2;padding:.65em 1em;border-radius:99px;min-height:44px;cursor:pointer}
+.maker-ribbon{background:#174d32;color:#dbfa91;overflow:hidden;border-radius:1rem;margin-bottom:1rem}
+.maker-track{display:flex;width:max-content;animation:maker-scroll 25s linear infinite}
+.maker-track span{white-space:pre;font-size:clamp(1.5rem,4vw,3.5rem);line-height:1.6;font-weight:800;padding-right:.3em}
+.makers.paused .maker-track{animation-play-state:paused}
+@keyframes maker-scroll{to{transform:translateX(-50%)}}
+.maker-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}
+.maker-card{border-radius:1.3rem;overflow:hidden;background:#ffedbd}
+.maker-card:nth-child(even){background:#dfefca}
+.maker-card img{display:block;width:100%;height:clamp(10rem,19vw,16rem);object-fit:cover}
+.maker-card>div{padding:clamp(1rem,2.5vw,2rem)}
+.maker-card h3{font-size:clamp(1.65rem,3vw,2.6rem);line-height:1.1;margin:.25em 0}
+.maker-card p{margin:.45em 0 .8em;line-height:1.5}
+.maker-card a{display:block;width:fit-content;color:#174832;text-decoration:underline;text-underline-offset:3px;padding:.35em 0;overflow-wrap:anywhere}
+.catalog-status:empty{display:none}
+@media(max-width:610px){.maker-grid{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){.maker-track{animation:none}}
