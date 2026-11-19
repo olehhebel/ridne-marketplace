@@ -1,12 +1,10 @@
-.makers {margin:1.4rem 0 2rem;color:#143e2a}
-.makers[hidden],.slot-heading[hidden],.maker-motion[hidden]{display:none}
-.makers header{display:flex;align-items:center;justify-content:space-between;gap:1rem}
-.makers h2,.slot-heading{font-size:clamp(2rem,4vw,3.8rem);line-height:1.06;letter-spacing:-.045em;margin:.5em 0}
-.maker-motion{font:inherit;font-size:.85rem;color:inherit;background:white;border:1px solid #bed0c2;padding:.65em 1em;border-radius:99px;min-height:44px;cursor:pointer}
-.maker-ribbon{background:#174d32;color:#dbfa91;overflow:hidden;border-radius:1rem;margin-bottom:1rem}
+.makers {margin:.4rem 0 1.5rem;color:#143e2a}
+.makers[hidden],.slot-heading[hidden]{display:none}
+.slot-heading{font-size:clamp(2rem,4vw,3.8rem);line-height:1.06;letter-spacing:-.045em;margin:.5em 0}
+.maker-ribbon{background:#174d32;color:#dbfa91;overflow:hidden;border-radius:.75rem;padding:.15rem 0}
 .maker-track{display:flex;width:max-content;animation:maker-scroll 25s linear infinite}
-.maker-track span{white-space:pre;font-size:clamp(1.5rem,4vw,3.5rem);line-height:1.6;font-weight:800;padding-right:.3em}
-.makers.paused .maker-track{animation-play-state:paused}
+.maker-track span{white-space:pre;font-size:clamp(1.5rem,4vw,3.5rem);line-height:1.15;font-weight:800;padding-right:.3em}
+.makers:hover .maker-track,.makers:focus-within .maker-track{animation-play-state:paused}
 @keyframes maker-scroll{to{transform:translateX(-50%)}}
 .maker-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}
 .maker-card{border-radius:1.3rem;overflow:hidden;background:#ffedbd}
@@ -32,6 +30,6 @@
 .maker-position{min-width:4.6rem;text-align:center;font-variant-numeric:tabular-nums}
 @media(max-width:610px){.maker-card{flex-basis:100%}}
 .maker-ribbon{position:relative}
-.maker-join{display:block;width:fit-content;margin:0 1rem .8rem;padding:.6rem 1rem;background:#dbfa91;color:#174d32;border-radius:2rem;text-decoration:none;font-weight:700}
+.maker-join{display:block;width:fit-content;margin:.45rem 0 .65rem;padding:.65rem 1.1rem;background:#174d32;color:#fff;border-radius:2rem;text-decoration:none;font-weight:700}
 .maker-join:hover,.maker-join:focus-visible{text-decoration:underline}
 @media(prefers-reduced-motion:reduce){.maker-track{width:auto}.maker-track span:first-child{white-space:normal;padding:.5rem 1rem;font-size:1.45rem}.maker-track span+span{display:none}}

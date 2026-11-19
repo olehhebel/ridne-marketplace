@@ -685,11 +685,7 @@ if ($("#products")) {
   if (params.has("favorites")) {
     $("#demo-catalog").hidden = true;
   }
-  const header = $(".desktop-actions");
-  header?.insertAdjacentHTML(
-    "afterbegin",
-    '<a class="nav-link" href="/account/#requests">Повідомлення</a>',
-  );
+
 }
 if ($("#member-signup")) {
   if (params.get("role") === "seller") sessionWrite(pendingKey, {});

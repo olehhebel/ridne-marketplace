@@ -29,9 +29,9 @@
   <link rel="stylesheet" href="/marketplace/market.css?v=20260915-sprite2">
   <script defer src="/vendor/supabase.js"></script>
   <script defer src="/marketplace/config.js"></script>
-  <script defer src="/marketplace/market.js?v=20261119-carousel"></script>
+  <script defer src="/marketplace/market.js?v=compact1"></script>
   <script defer src="/telegram-config.js"></script>
-<link rel="stylesheet" href="/marketplace/flows.css?v=20261119-member"><script defer src="/marketplace/flows.js?v=20261119-member"></script><link rel="stylesheet" href="/marketplace/makers.css?v=2"></head>
+<link rel="stylesheet" href="/marketplace/flows.css?v=20261119-member"><script defer src="/marketplace/flows.js?v=compact1"></script><link rel="stylesheet" href="/marketplace/makers.css?v=3"></head>
 <body>
   <a class="skip" href="#catalog">До товарів</a>
   <header class="header">
@@ -57,8 +57,7 @@
     <section class="catalog-shell" id="catalog" aria-labelledby="catalog-title">
       <h2 id="catalog-title" class="sr-only">Продукти</h2>
       <div id="categories" class="category-strip" aria-label="Категорії товарів"></div>
-      <details class="filter-panel">
-        <summary><span>Фільтри</span><span aria-hidden="true">⌄</span></summary>
+      <div hidden>
         <div class="filters" aria-label="Фільтри каталогу">
           <label class="field"><span>Категорія</span><select id="filter-category"><option value="">Усі категорії</option></select></label>
           <label class="field"><span>Область</span><select class="location" id="global-region"><option value="">Уся Україна</option></select></label>
@@ -66,11 +65,10 @@
           <label class="field"><span>Сортування</span><select id="sort"><option value="new">Спочатку нові</option><option value="low">Від дешевих</option><option value="high">Від дорогих</option></select></label>
           <button class="btn tertiary clear-filters" id="clear-filters">Скинути</button>
         </div>
-      </details>
-      <section id="makers" class="makers" aria-labelledby="makers-heading">
-        <header><h2 id="makers-heading">Наші виробники</h2>
-          <button class="maker-motion" type="button" hidden aria-pressed="false">Зупинити стрічку</button></header>
-        <div class="maker-ribbon"><span class="sr-only">Вони вже з нами. Вирощуєте чи створюєте своє?</span><div class="maker-track" aria-hidden="true"><span>Вони вже з нами ✳ Вирощуєте чи створюєте своє? Долучайтеся до Рідного! ✳ </span><span>Вони вже з нами ✳ Вирощуєте чи створюєте своє? Долучайтеся до Рідного! ✳ </span></div><a class="maker-join" href="/signup/?role=seller">Долучитися до Рідного →</a></div>
+      </div>
+      <section id="makers" class="makers" aria-label="Виробники Рідного">
+        <div class="maker-ribbon"><span class="sr-only">Вони вже з нами. Вирощуєте чи створюєте своє?</span><div class="maker-track" aria-hidden="true"><span>Вони вже з нами ✳ Вирощуєте чи створюєте своє? Долучайтеся до Рідного! ✳ </span><span>Вони вже з нами ✳ Вирощуєте чи створюєте своє? Долучайтеся до Рідного! ✳ </span></div></div>
+        <a class="maker-join" href="/signup/?role=seller">Долучитися до Рідного →</a>
         <div class="maker-grid" id="maker-gallery" role="region" aria-label="Картки виробників" tabindex="0">
           <article class="maker-card" data-region="Житомирська" data-categories="dry-goods honey nuts"><img src="/assets/spelt.webp" alt="Ілюстрація спельти й борошна жорнового помелу" width="600" height="600">
             <div><p>Стриєва · Житомирська область</p><h3>GALEKS-AGRO</h3>
