@@ -29,9 +29,9 @@
   <link rel="stylesheet" href="/marketplace/market.css?v=20260915-sprite2">
   <script defer src="/vendor/supabase.js"></script>
   <script defer src="/marketplace/config.js"></script>
-  <script defer src="/marketplace/market.js?v=20261119-makers"></script>
+  <script defer src="/marketplace/market.js?v=20261119-carousel"></script>
   <script defer src="/telegram-config.js"></script>
-<link rel="stylesheet" href="/marketplace/flows.css?v=20260921-v2"><script defer src="/marketplace/flows.js?v=20260925-auth"></script><link rel="stylesheet" href="/marketplace/makers.css"></head>
+<link rel="stylesheet" href="/marketplace/flows.css?v=20260921-v2"><script defer src="/marketplace/flows.js?v=20260925-auth"></script><link rel="stylesheet" href="/marketplace/makers.css?v=2"></head>
 <body>
   <a class="skip" href="#catalog">До товарів</a>
   <header class="header">
@@ -70,8 +70,8 @@
       <section id="makers" class="makers" aria-labelledby="makers-heading">
         <header><h2 id="makers-heading">Наші виробники</h2>
           <button class="maker-motion" type="button" hidden aria-pressed="false">Зупинити стрічку</button></header>
-        <div class="maker-ribbon" aria-hidden="true"><div class="maker-track"><span>GALEKS-AGRO ✳ Костів · Жива Органіка ✳ </span><span>GALEKS-AGRO ✳ Костів · Жива Органіка ✳ </span></div></div>
-        <div class="maker-grid">
+        <div class="maker-ribbon"><span class="sr-only">Вони вже з нами. Вирощуєте чи створюєте своє?</span><div class="maker-track" aria-hidden="true"><span>Вони вже з нами ✳ Вирощуєте чи створюєте своє? Долучайтеся до Рідного! ✳ </span><span>Вони вже з нами ✳ Вирощуєте чи створюєте своє? Долучайтеся до Рідного! ✳ </span></div><a class="maker-join" href="/signup/?role=seller">Долучитися до Рідного →</a></div>
+        <div class="maker-grid" id="maker-gallery" role="region" aria-label="Картки виробників" tabindex="0">
           <article class="maker-card" data-region="Житомирська" data-categories="dry-goods honey nuts"><img src="/assets/spelt.webp" alt="Ілюстрація спельти й борошна жорнового помелу" width="600" height="600">
             <div><p>Стриєва · Житомирська область</p><h3>GALEKS-AGRO</h3>
             <p>Вирощують спельту, жито й гречку. Із власного зерна роблять крупи, пластівці та борошно жорнового помелу.</p>
@@ -80,6 +80,21 @@
             <div><p>Поляни · Львівська область</p><h3>Костів · Жива Органіка</h3>
             <p>Богдан Костів із родиною вирощує зерно. У крамниці господарства є амарант для пророщування, голозерний овес на кашу та гречані пластівці.</p>
             <a href="https://organic-kostiv.in.ua/product/amarant-organichnyj-dlya-proroshhuvannya-pr/">Амарант для пророщування ↗</a><a href="https://organic-kostiv.in.ua/">Уся продукція Костів ↗</a><a href="mailto:kostiv_z@ukr.net">kostiv_z@ukr.net</a></div></article>
+          <article class="maker-card" data-region="Львівська" data-categories="vegetables dry-goods craft"><img loading="lazy" src="/assets/poliany.webp" alt="Ілюстрація овочів та зерна у плетеному кошику" width="640" height="640">
+            <div><p>Поляни · Львівська область</p><h3>Богдан із Полян</h3>
+            <p>Фермер зі Львівщини. У своєму профілі Богдан обрав три напрями — овочі, сухі продукти й крафтові вироби.</p></div></article>
+          <article class="maker-card" data-region="" data-categories="preserves"><img loading="lazy" src="/assets/kimchi.webp" alt="Ілюстрація кімчі з пекінської капусти" width="640" height="640">
+            <div><p>Миронівка · Заявка виробника</p><h3>Ро</h3>
+            <p>У заявці Ро описує кімчі — квашену капусту по-корейськи. Оголошення про продаж на Рідне поки немає.</p></div></article>
+          <article class="maker-card" data-region="Київська" data-categories=""><img loading="lazy" src="/assets/studio.webp" alt="Ілюстрація робочого столу дизайнера з ескізами" width="640" height="640">
+            <div><p>Київська область · Профіль автора</p><h3>Oleh Hebel</h3>
+            <p>Продуктовий дизайнер і автор Рідне. У портфоліо Олега можна переглянути його роботи й зв’язатися з ним напряму.</p>
+            <a href="https://olehhebel.top/">Портфоліо Олега ↗</a></div></article>
+        </div>
+        <div class="maker-nav" hidden>
+          <button type="button" data-slide="-1" aria-controls="maker-gallery" aria-label="Попередні картки">←</button>
+          <span class="maker-position" aria-live="polite"></span>
+          <button type="button" data-slide="1" aria-controls="maker-gallery" aria-label="Наступні картки">→</button>
         </div>
       </section>
       <div id="catalog-status" class="catalog-status" role="status">Завантажуємо товари…</div>

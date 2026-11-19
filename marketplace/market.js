@@ -52,7 +52,54 @@ function renderCatalog(){
   else $('#products').innerHTML='';
   $$('[data-cat]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.cat===params.get('category'))));
 }
+function setupMakerGallery() {
+  const gallery = $('#maker-gallery');
+  const nav = $('.maker-nav');
+  const position = $('.maker-position');
+  function visibleCards() {
+    return [...gallery.children].filter(card => !card.hidden);
+  }
+  function update() {
+    const cards = visibleCards();
+    nav.hidden = gallery.clientWidth === 0 || gallery.scrollWidth <= gallery.clientWidth + 2;
+    if (nav.hidden) return;
+    const box = gallery.getBoundingClientRect();
+    const shown = cards.filter(card => {
+      const rect = card.getBoundingClientRect();
+      return rect.left < box.right - 3 && rect.right > box.left + 3;
+    });
+    if (shown.length) {
+      const first = cards.indexOf(shown[0]) + 1;
+      const last = cards.indexOf(shown[shown.length - 1]) + 1;
+      const label = (first === last ? first : first + '–' + last) + ' з ' + cards.length;
+      if (position.textContent !== label) position.textContent = label;
+    }
+  }
+  function move(direction) {
+    const cards = visibleCards();
+    if (!cards.length) return;
+    const left = gallery.getBoundingClientRect().left;
+    const stops = cards.map(card => card.getBoundingClientRect().left - left + gallery.scrollLeft);
+    const limit = gallery.scrollWidth - gallery.clientWidth;
+    const x = gallery.scrollLeft;
+    const target = direction > 0
+      ? (x >= limit - 2 ? 0 : stops.find(stop => stop > x + 2) ?? limit)
+      : (x <= 2 ? limit : stops.filter(stop => stop < x - 2).pop() ?? 0);
+    gallery.scrollTo({left:target,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth'});
+  }
+  nav.querySelectorAll('button').forEach(button => button.onclick = () => move(Number(button.dataset.slide)));
+  gallery.addEventListener('keydown', event => {
+    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+    event.preventDefault();
+    move(event.key === 'ArrowLeft' ? -1 : 1);
+  });
+  gallery.addEventListener('scroll', update, {passive:true});
+  window.addEventListener('resize', update);
+  new MutationObserver(update).observe(gallery,{subtree:true,attributes:true,attributeFilter:['hidden']});
+  update();
+}
 async function setupCatalog(){
+  setupMakerGallery();
   const motionButton = $('.maker-motion');
   const motionPreference = matchMedia('(prefers-reduced-motion: reduce)');
   motionButton.hidden = motionPreference.matches;
