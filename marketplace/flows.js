@@ -141,48 +141,90 @@ async function profileForSession() {
     await api("ensure-profile", { name: name.length < 2 ? "Покупець" : name })
   ).profile;
 }
-async function openAuth(seller = false) {
-  const dialog = flowModal(
-    seller ? "Увійдіть до Рідного" : "Ваш акаунт Рідного",
-    `<div class="auth-choice"><p>Оберіть акаунт для входу або реєстрації.</p>
-      <button type="button" class="auth-provider" data-provider="google" disabled>Продовжити з Google</button>
-      <button type="button" class="auth-provider apple" data-provider="apple" disabled>Продовжити з Apple</button>
-      <p class="hint" role="status">Перевіряємо доступні способи входу…</p>
-      <a class="auth-existing" href="/account/" hidden>Вхід за паролем</a>
-      <small><a href="/terms/">Правила Рідного</a> · <a href="/privacy/">Приватність</a></small></div>`
-  );
-  const choice = dialog.querySelector(".auth-choice");
-  const status = choice.querySelector('[role="status"]');
-  const buttons = [...choice.querySelectorAll("[data-provider]")];
-  try {
-    const response = await fetch(cfg.url + "/auth/v1/settings", {headers:{apikey:cfg.key}});
-    if (!response.ok) throw Error();
-    const settings = await response.json();
-    for (const button of buttons) {
-      const provider = button.dataset.provider;
-      button.disabled = !settings.external?.[provider];
-      button.onclick = async () => {
-        for (const item of buttons) item.disabled = true;
-        status.textContent = "Переходимо до входу…";
-        try {
-          const {error} = await client.auth.signInWithOAuth({
-            provider, options:{redirectTo:new URL("/account/", location.origin).href}
-          });
-          if (error) throw error;
-        } catch {
-          status.textContent = "Не вдалося почати вхід. Спробуйте ще раз.";
-          for (const item of buttons) item.disabled = !settings.external?.[item.dataset.provider];
-        }
-      };
-    }
-    const unavailable = buttons.filter(button => button.disabled);
-    status.textContent = unavailable.length === 2 ? "Вхід через Google та Apple поки недоступний."
-      : unavailable.length ? "Цей спосіб входу поки недоступний: " + (unavailable[0].dataset.provider === "apple" ? "Apple." : "Google.") : "";
-    choice.querySelector(".auth-existing").hidden = unavailable.length === 0;
-  } catch {
-    status.textContent = "Не вдалося завантажити способи входу. Відкрийте форму ще раз.";
-    choice.querySelector(".auth-existing").hidden = false;
+function openAuth() {
+  const dialog = flowModal("Увійдіть або створіть акаунт", '<div class="member-auth"></div>');
+  renderMemberAuth(dialog.querySelector(".member-auth"));
+}
+function renderMemberAuth(root, mode = "choose", email = "") {
+  const callback = new URL("/account/", location.origin).href;
+  if (mode === "choose") {
+    root.innerHTML = `<div class="member-choices">
+      <button type="button" class="btn primary" data-mode="login"><strong>Я вже з вами</strong><span>Увійти до кабінету</span></button>
+      <button type="button" class="btn secondary" data-mode="signup"><strong>Хочу доєднатися</strong><span>Створити акаунт</span></button>
+    </div>`;
+    root.querySelectorAll("[data-mode]").forEach(button => {
+      button.onclick = () => renderMemberAuth(root, button.dataset.mode);
+    });
+    return;
   }
+  const signup = mode === "signup";
+  root.innerHTML = `<button type="button" class="member-back">← Назад</button>
+    <form class="member-form"><h3>${signup ? "Створити акаунт" : "Увійти до кабінету"}</h3>
+    ${signup ? field("Ім’я", "full_name", "", "text", 'required minlength="2" maxlength="100" autocomplete="name"') : ""}
+    ${field("Електронна пошта", "email", email, "email", 'required autocomplete="email"')}
+    ${field("Пароль", "password", "", "password", signup ? 'required minlength="8" autocomplete="new-password" placeholder="Щонайменше 8 символів"' : 'required autocomplete="current-password"')}
+    ${signup ? field("Повторіть пароль", "repeat", "", "password", 'required autocomplete="new-password"') : ""}
+    <p role="status"></p><button type="submit" class="btn primary">${signup ? "Зареєструватися" : "Увійти"}</button>
+    ${signup ? '<small><a href="/terms/">Правила Рідного</a> · <a href="/privacy/">Приватність</a></small>' : '<button type="button" class="member-reset">Забули пароль?</button>'}
+    </form>`;
+  root.querySelector(".member-back").onclick = () => renderMemberAuth(root);
+  const form = root.querySelector("form");
+  const status = form.querySelector('[role="status"]');
+  const submit = form.querySelector("[type=submit]");
+  form.querySelector("input").focus();
+  if (!signup) form.querySelector(".member-reset").onclick = async event => {
+    const input = form.elements.email;
+    if (!input.reportValidity()) return;
+    const button = event.currentTarget;
+    button.disabled = true;
+    try {
+      const {error} = await client.auth.resetPasswordForEmail(input.value.trim(), {redirectTo:callback + "?recovery=1"});
+      if (error) throw error;
+      status.textContent = "Якщо адреса зареєстрована, на неї надійде лист для зміни пароля.";
+    } catch { status.textContent = "Не вдалося надіслати лист. Спробуйте пізніше."; }
+    finally { button.disabled = false; }
+  };
+  form.onsubmit = async event => {
+    event.preventDefault();
+    if (submit.disabled) return;
+    const address = form.elements.email.value.trim();
+    const password = form.elements.password.value;
+    if (signup && password !== form.elements.repeat.value) {
+      status.textContent = "Паролі мають збігатися.";
+      form.elements.repeat.focus();
+      return;
+    }
+    if (signup && form.elements.full_name.value.trim().length < 2) {
+      status.textContent = "Введіть ім’я щонайменше з двох символів.";
+      return;
+    }
+    submit.disabled = true;
+    status.textContent = signup ? "Створюємо акаунт…" : "Входимо…";
+    try {
+      if (signup) {
+        const {data,error} = await client.auth.signUp({
+          email:address, password,
+          options:{emailRedirectTo:callback, data:{full_name:form.elements.full_name.value.trim(), ridne_member:true}}
+        });
+        if (error) throw error;
+        if (!data.session) {
+          root.innerHTML = `<h3>Перевірте пошту</h3><p>Відкрийте лист для <strong>${esc(address)}</strong> і натисніть посилання підтвердження. Після цього ви зможете увійти до кабінету.</p>
+            <button type="button" class="btn secondary">Перейти до входу</button>`;
+          root.querySelector("button").onclick = () => renderMemberAuth(root, "login", address);
+          return;
+        }
+      } else {
+        const {error} = await client.auth.signInWithPassword({email:address,password});
+        if (error) throw error;
+      }
+      location.assign(callback);
+    } catch (error) {
+      status.textContent = error.status === 429 ? "Забагато спроб. Зачекайте й повторіть." :
+        error.code === "email_not_confirmed" ? "Підтвердьте адресу за посиланням у листі й увійдіть знову." :
+        error.code === "invalid_credentials" ? "Перевірте електронну пошту й пароль." :
+        signup ? "Не вдалося зареєструватися. Перевірте дані й спробуйте ще раз." : "Не вдалося увійти. Спробуйте ще раз.";
+    } finally { submit.disabled = false; }
+  };
 }
 async function beginSell(seed = {}) {
   sessionWrite(pendingKey, seed);
@@ -309,7 +351,7 @@ setupAccount = async function () {
     if (!client) throw Error("Сервіс входу не завантажився. Оновіть сторінку.");
     const current = (await client.auth.getSession()).data.session;
     if (
-      current?.user?.email?.toLowerCase() === "doctorgebel@gmail.com" &&
+      current?.user?.app_metadata?.ridne_admin === true &&
       params.get("mode") !== "personal" && !sessionRead(pendingKey)
     ) {
       location.replace("/admin/moderation/");
@@ -317,19 +359,20 @@ setupAccount = async function () {
     }
     const profile = await profileForSession();
     if (!profile) {
-      loginView(
-        params.has("error") ? "Посилання недійсне. Запросіть нове." : "",
-      );
-      const extra = document.createElement("button");
-      extra.className = "btn secondary";
-      extra.textContent = "Увійти або зареєструватися";
-      extra.onclick = () => openAuth(!!sessionRead(pendingKey));
-      $("#account-content").append(extra);
+      const root = $("#account-content");
+      root.innerHTML = '<section class="onboarding"><h1>Ваш кабінет Рідного</h1><p role="status"></p><div class="member-auth"></div></section>';
+      if (params.has("error") || new URLSearchParams(location.hash.slice(1)).has("error")) {
+        root.querySelector('[role="status"]').textContent = "Не вдалося відкрити посилання. Якщо пошту вже підтверджено, увійдіть із паролем.";
+      }
+      renderMemberAuth(root.querySelector(".member-auth"));
       return;
     }
     accountProfile = profile;
     accountData = await api("dashboard");
     renderDashboard(profile, accountData);
+    if (current?.user?.user_metadata?.ridne_member) {
+      client.functions.invoke("member-welcome").catch(() => {});
+    }
     enhanceAccount(profile, accountData);
     const intent = sessionRead(pendingKey);
     if (intent && !$("#flow-modal")?.open)
@@ -618,57 +661,6 @@ function proposalForm(r) {
     }
   };
 }
-setupOnboarding = function () {
-  const root = $("#onboard");
-  let role = params.get("role") === "seller" ? "seller" : "";
-  let interests = [];
-  const render = () => {
-    const choosing = !role;
-    $("#step-counter").textContent = choosing ? "Почнімо" : "Ваші інтереси";
-    $(".progress").hidden = true;
-    if ($(".form-actions")) $(".form-actions").hidden = true;
-    root.innerHTML = choosing
-      ? `<h1>Що хочете робити?</h1><div class="role-choices"><button type="button" class="btn primary" data-role="buyer">Купувати</button><button type="button" class="btn secondary" data-role="seller">Продавати</button></div><p class="hint">Купуйте без реєстрації. Для продажів потрібен акаунт.</p>`
-      : `<h1>${role === "seller" ? "Що ви створюєте?" : "Що вам до смаку?"}</h1><p>Оберіть категорії або пропустіть цей крок.</p><div class="interest-choices">${CATS.map((c) => `<button type="button" class="cat" data-interest="${c[0]}" aria-pressed="false">${c[2]} ${c[1]}</button>`).join("")}</div><div class="flow-actions"><button class="btn primary" type="button" id="continue-interest">${role === "seller" ? "Продовжити як виробник" : "До товарів"}</button><button class="btn tertiary" type="button" id="skip-interest">Пропустити</button></div>`;
-    root.querySelectorAll("[data-role]").forEach(
-      (b) =>
-        (b.onclick = () => {
-          role = b.dataset.role;
-          storageSet("ridne-role", role);
-          render();
-        }),
-    );
-    root.querySelectorAll("[data-interest]").forEach(
-      (b) =>
-        (b.onclick = () => {
-          const cat = b.dataset.interest;
-          interests = interests.includes(cat)
-            ? interests.filter((x) => x !== cat)
-            : [...interests, cat];
-          b.setAttribute("aria-pressed", String(interests.includes(cat)));
-        }),
-    );
-    const finish = () => {
-      storageSet("ridne-interests", interests);
-      if (role === "seller")
-        beginSell({ category_slug: interests[0] || "vegetables" });
-      else
-        location.href =
-          "/?" +
-          (interests.length === 1
-            ? "category=" + encodeURIComponent(interests[0])
-            : "") +
-          "#catalog";
-    };
-    $("#continue-interest")?.addEventListener("click", finish);
-    $("#skip-interest")?.addEventListener("click", () => {
-      interests = [];
-      finish();
-    });
-  };
-  render();
-  root.onsubmit = (e) => e.preventDefault();
-};
 document.addEventListener("click", (e) => {
   const slot = e.target.closest("[data-sell-category]");
   const sellerLink = e.target.closest('a[href^="/signup/?role=seller"]');
@@ -699,9 +691,12 @@ if ($("#products")) {
     '<a class="nav-link" href="/account/#requests">Повідомлення</a>',
   );
 }
-if ($("#onboard")) setupOnboarding();
+if ($("#member-signup")) {
+  if (params.get("role") === "seller") sessionWrite(pendingKey, {});
+  renderMemberAuth($("#member-signup"), "signup");
+}
 if ($("#account-content")) {
-  const recovery = new URLSearchParams(location.hash.slice(1)).get('type') === 'recovery';
+  const recovery = params.get("recovery") === "1" || new URLSearchParams(location.hash.slice(1)).get('type') === 'recovery';
   if (recovery) {
     const root = $("#account-content");
     root.innerHTML = '<div class="onboarding"><h1>Новий пароль</h1><form id="recovery-form"><label class="field"><span>Пароль від 8 символів</span><input type="password" name="password" minlength="8" autocomplete="new-password" required></label><p role="alert" id="recovery-status"></p><button class="btn primary">Зберегти пароль</button></form></div>';
