@@ -33,3 +33,5 @@
 .maker-join{display:block;width:fit-content;margin:.45rem 0 .65rem;padding:.65rem 1.1rem;background:#174d32;color:#fff;border-radius:2rem;text-decoration:none;font-weight:700}
 .maker-join:hover,.maker-join:focus-visible{text-decoration:underline}
 @media(prefers-reduced-motion:reduce){.maker-track{width:auto}.maker-track span:first-child{white-space:normal;padding:.5rem 1rem;font-size:1.45rem}.maker-track span+span{display:none}}
+.maker-card h3 .maker-profile-link{display:inline;font:inherit;color:inherit;padding:0;text-decoration:none}
+.maker-card h3 .maker-profile-link:hover,.maker-card h3 .maker-profile-link:focus-visible{text-decoration:underline}

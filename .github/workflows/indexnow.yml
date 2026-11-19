@@ -7,6 +7,7 @@ on:
       - 'index.html'
       - 'journal/**'
       - 'vyrobnykam/**'
+      - 'vyrobnyky/**'
       - 'telegram/**'
       - 'terms/**'
       - 'sitemap.xml'
