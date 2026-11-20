@@ -29,30 +29,31 @@
   <link rel="stylesheet" href="/marketplace/market.css?v=20260915-sprite2">
   <script defer src="/vendor/supabase.js"></script>
   <script defer src="/marketplace/config.js"></script>
-  <script defer src="/marketplace/market.js?v=compact1"></script>
+  <script defer src="/marketplace/market.js?v=20261120-header"></script>
   <script defer src="/telegram-config.js"></script>
-<link rel="stylesheet" href="/marketplace/flows.css?v=20261119-member"><script defer src="/marketplace/flows.js?v=compact1"></script><link rel="stylesheet" href="/marketplace/makers.css?v=4"></head>
+<link rel="stylesheet" href="/marketplace/flows.css?v=20261119-member"><script defer src="/marketplace/flows.js?v=compact1"></script><link rel="stylesheet" href="/marketplace/makers.css?v=4">
+  <link rel="stylesheet" href="/marketplace/home-header.css?v=1">
+</head>
 <body>
   <a class="skip" href="#catalog">До товарів</a>
   <header class="header">
     <div class="header-row">
-      <a class="brand" href="/" aria-label="РІДНЕ — головна"><img src="/assets/ridne-logo-2026.webp" width="48" height="48" alt="Логотип РІДНЕ" fetchpriority="high"><span>РІДНЕ</span></a>
+      <a class="brand" href="/" aria-label="РІДНЕ — головна">RIDNE</a>
       <form class="header-search" action="/" role="search">
-        <span class="search-icon" aria-hidden="true">⌕</span>
         <label for="search" class="sr-only">Пошук товарів і виробників</label>
-        <input id="search" name="q" placeholder="Пошук у РІДНЕ" autocomplete="off">
-        <button class="search-button" aria-label="Знайти">Знайти</button>
+        <input id="search" name="q" type="search" placeholder="Пошук" autocomplete="off">
+        <button class="search-button" type="submit" aria-label="Знайти"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="10" cy="10" r="7.5"/><path d="m16 16 6 6"/></svg></button>
       </form>
       <nav class="desktop-actions" aria-label="Навігація">
         <a class="nav-link" href="#catalog">Продукти</a><a class="nav-link" href="/?favorites=1#catalog">Обране</a>
-        <a class="icon-link" href="/account/" aria-label="Профіль">●</a><a class="btn primary" href="/signup/?role=seller">Додати товар</a>
+        <a class="btn primary" href="/signup/?role=seller">Додати товар</a>
       </nav>
     </div>
   </header>
   <main id="main">
     <section class="discovery-head" aria-labelledby="hero-title">
-      <div><p class="eyebrow">Маркетплейс локальних продуктів</p><h1 id="hero-title">Локальні продукти від українських виробників</h1><p class="intro-lead">Знаходьте продукти поруч і купуйте напряму у виробника.</p></div>
-      <a class="btn secondary" href="/signup/?role=seller">Ви виробник? Почніть продавати</a>
+      <div><h1 id="hero-title">Локальні продукти<br> від українських виробників</h1><p class="intro-lead">Знаходьте продукти поруч і купуйте напряму у виробника</p></div>
+      <a class="btn secondary" href="/signup/?role=seller">Ви виробник? Почніть продавати!</a>
     </section>
     <section class="catalog-shell" id="catalog" aria-labelledby="catalog-title">
       <h2 id="catalog-title" class="sr-only">Продукти</h2>
@@ -106,7 +107,7 @@
   <dialog class="modal" id="product-modal"><div class="modal-head"><p class="eyebrow">Товар від виробника</p><button class="icon-link" id="close-product" aria-label="Закрити">×</button></div><div id="product-detail"></div></dialog>
   <footer class="footer">
     <a class="brand footer-brand" href="/"><img src="/assets/ridne-logo-2026.webp" width="52" height="52" alt=""><span>РІДНЕ</span></a>
-    <nav class="footer-links" aria-label="Посилання"><a href="#catalog">Продукти</a><a href="/vyrobnykam/">Виробникам</a><a href="/terms/">Правила</a><a href="/privacy/">Приватність</a><a href="https://t.me/ridne_store_bot?start=ridne_store">Telegram</a></nav>
+    <nav class="footer-links" aria-label="Посилання"><a href="#catalog">Продукти</a><a href="/vyrobnykam/">Виробникам</a><a href="/account/">Профіль</a><a href="/terms/">Правила</a><a href="/privacy/">Приватність</a><a href="https://t.me/ridne_store_bot?start=ridne_store">Telegram</a></nav>
     <p>© 2026 РІДНЕ · Зроблено в Україні</p>
   </footer>
   <nav class="mobile-nav" aria-label="Мобільна навігація">
