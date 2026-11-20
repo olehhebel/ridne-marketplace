@@ -16,7 +16,7 @@ python3 -m http.server 8080
 ```
 
 ## Deployment
-Configured for Vercel. Canonical production domain is planned as `https://ridne.store/`.
+The public site is served by GitHub Pages at `https://ridne.store/`. Publish journal articles as static HTML and link them from the homepage journal section and `sitemap.xml`.
 
 ## Product rules
 The authoritative project instructions remain outside this public repository. Key invariant: trust, producer legitimacy, food safety and transaction integrity outrank growth shortcuts.

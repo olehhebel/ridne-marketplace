@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://ridne.store/</loc><lastmod>2026-11-19</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url>
+  <url><loc>https://ridne.store/</loc><lastmod>2026-11-20</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url>
   <url><loc>https://ridne.store/vyrobnykam/</loc><lastmod>2026-09-12</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
   <url><loc>https://ridne.store/telegram/</loc><lastmod>2026-09-11</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
   <url><loc>https://ridne.store/terms/</loc><lastmod>2026-09-12</lastmod><changefreq>monthly</changefreq><priority>0.5</priority></url>
@@ -10,4 +10,7 @@
   <url><loc>https://ridne.store/vyrobnyky/galeks-agro/</loc><lastmod>2026-11-19</lastmod></url>
   <url><loc>https://ridne.store/vyrobnyky/kostiv-zhyva-orhanika/</loc><lastmod>2026-11-19</lastmod></url>
   <url><loc>https://ridne.store/vyrobnyky/bohdan-iz-polian/</loc><lastmod>2026-11-19</lastmod></url>
+  <url><loc>https://ridne.store/journal/zerno-vid-vyrobnyka/</loc><lastmod>2026-11-20</lastmod></url>
+  <url><loc>https://ridne.store/journal/yak-prodaty-kraftovyi-vyrib/</loc><lastmod>2026-11-20</lastmod></url>
+  <url><loc>https://ridne.store/journal/partnerstvo-pislia-yarmarku/</loc><lastmod>2026-11-20</lastmod></url>
 </urlset>
