@@ -24,10 +24,8 @@ window.RIDNE_TELEGRAM = {
     if (document.querySelector(".onboarding")) {
       contact.classList.add("chatbot-dock--no-nav");
     }
-    contact.href = `https://t.me/${config.username}?start=ridne_store`;
-    contact.target = "_blank";
-    contact.rel = "noopener noreferrer";
-    contact.setAttribute("aria-label", "Написати в РІДНЕ у Telegram — для покупців і продавців");
+    contact.href = "/contact/";
+    contact.setAttribute("aria-label", "Написати в РІДНЕ — для покупців і продавців");
     contact.innerHTML = `
       <span class="chatbot-dock__icon" aria-hidden="true">
         <svg viewBox="0 0 24 24" role="presentation" focusable="false">

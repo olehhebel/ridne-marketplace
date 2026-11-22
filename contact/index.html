@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Написати в Рідне — покупцям і виробникам</title><link rel="canonical" href="https://ridne.store/contact/">
+<link rel="stylesheet" href="/styles.css"><style>main{max-width:40rem;margin:4rem auto;padding:1rem}label,input,textarea{display:block;width:100%}label{margin:1rem 0}input,textarea{padding:.8rem;font:inherit;border:1px solid #728571;border-radius:.5rem}</style></head>
+<body><main><a href="/">← Рідне</a><h1>Написати в Рідне</h1><p>Маєш питання або хочеш продавати на Рідному? Напиши команді.</p>
+<form action="https://api.web3forms.com/submit" method="post">
+<input type="hidden" name="access_key" value="54d405a9-39f1-41cc-8263-276e0ebaf3c6"><input type="hidden" name="subject" value="Рідне — звернення із сайту"><input type="hidden" name="from_name" value="Рідне"><input type="checkbox" name="botcheck" hidden style="display:none" tabindex="-1">
+<label>Твоя пошта<input type="email" autocomplete="email" name="email" required></label>
+<label>Повідомлення<textarea name="message" rows="6" maxlength="7000" required></textarea></label>
+<button class="button button-accent" type="submit">Надіслати</button></form><p role="status"></p>
+<script>
+const form = document.querySelector('form');
+form.addEventListener('submit', async event => {
+  event.preventDefault();
+  const button = form.querySelector('button');
+  const status = document.querySelector('[role=status]');
+  button.disabled = true;
+  status.textContent = 'Надсилаємо…';
+  try {
+    const response = await fetch(form.action, { method: 'POST', body: new FormData(form), headers: { Accept: 'application/json' } });
+    const result = await response.json();
+    if (!response.ok || result.success !== true) throw new Error('Submission failed');
+    form.reset();
+    status.textContent = 'Звернення надіслано команді Рідного.';
+  } catch {
+    status.textContent = 'Помилка надсилання. Спробуй ще раз або напиши на theolehhebel@gmail.com.';
+  } finally {
+    button.disabled = false;
+  }
+});
+</script></main></body></html>
